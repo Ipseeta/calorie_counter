@@ -1,4 +1,4 @@
-flask
-openai
-python-dotenv
+Flask
 pydantic
+python-dotenv
+openai
