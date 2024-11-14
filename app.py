@@ -2,7 +2,7 @@
 from flask import Flask, render_template, request, jsonify
 import os
 import json
-from openai import OpenAI, APIError, OpenAIError, RateLimitError, APIConnectionError
+from openai import OpenAI, APIError, RateLimitError, APIConnectionError
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError, Field
 
