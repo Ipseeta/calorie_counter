@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Calorie Counter</title>
     <script src="/static/script.js" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -12,6 +13,34 @@
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            form {
+                padding: 15px;
+            }
+
+            .quantity-container {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            #quantity, 
+            #quantity_unit {
+                width: 100%;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            select,
+            button {
+                font-size: 16px;
+                padding: 12px;
+            }
         }
 
         h1 {
@@ -47,18 +76,39 @@
         .quantity-container {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px;
+            align-items: stretch;
         }
 
-        #quantity {
-            width: 150px;
-        }
-
-        select {
-            padding: 8px;
+        .quantity-container input,
+        .quantity-container select {
+            height: 42px;
+            box-sizing: border-box;
+            padding: 8px 12px;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: white;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .quantity-container input {
+            width: 100px;
+        }
+
+        .quantity-container select {
+            min-width: 100px;
+            padding-right: 35px;
+        }
+
+        .quantity-container select:hover,
+        .quantity-container input:hover {
+            border-color: #999;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .quantity-container select:focus,
+        .quantity-container input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
         }
 
         button {
@@ -89,6 +139,22 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             min-height: 50px;
         }
+
+        .loader {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -97,11 +163,7 @@
         <label for="food_item">Food Item:</label>
         <input type="text" id="food_item" name="food_item" list="food-suggestions" required>
         <datalist id="food-suggestions">
-            <option value="Apple">
-            <option value="Banana">
-            <option value="Orange">
-            <option value="Chicken Breast">
-            <option value="Rice">
+            <!-- Options will be populated by JavaScript -->
         </datalist>
 
         <label for="quantity">Quantity:</label>
@@ -114,10 +176,11 @@
             </select>
         </div>
 
-        <button type="button" onclick="submitForm()">Calculate Calories</button>
+        <button type="button" onclick="submitForm()">Get Nutrition Info</button>
     </form>
 
     <h2>Result:</h2>
+    <div class="loader" id="loader"></div>
     <div id="result"></div>
 </body>
 </html>
