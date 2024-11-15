@@ -31,9 +31,9 @@ def get_food_suggestions():
     try:
         # Modified prompt for food suggestions
         prompt = (
-            "Provide a list of top 20 popular dishes from a variety of cuisines around the world, including some well-known Indian dishes. "
+            "Provide a list of top 20 popular Indian dishes eaten in breakfast, lunch, and dinner."
             "IMPORTANT:Provide the list as plain text, with each dish name separated by a comma. "
-            "Examples should include a mix of popular dishes from Western, Asian, Mediterranean, and Indian cuisines, without any extra text."
+            "Examples should include a mix of popular dishes from Western, Asian, Mediterranean, and Indian cuisines, without any extra text or full stops."
         )
 
         response = client.chat.completions.create(
