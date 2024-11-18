@@ -4,7 +4,9 @@ import os
 import json
 from openai import OpenAI, APIError, RateLimitError, APIConnectionError
 from dotenv import load_dotenv
-from pydantic import BaseModel, ValidationError, Field
+from pydantic import BaseModel, ValidationError
+import requests
+from googleapiclient.discovery import build
 
 # Load environment variables from .env file
 load_dotenv()
@@ -16,11 +18,13 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Define the expected response schema using Pydantic
 class NutritionScores(BaseModel):
-    calories: float = Field(..., ge=0.0)
-    protein: float = Field(..., ge=0.0)
-    fat: float = Field(..., ge=0.0)
-    carbohydrates: float = Field(..., ge=0.0)
-    fiber: float = Field(..., ge=0.0)
+    calories: float
+    protein: float
+    fat: float
+    carbohydrates: float
+    fiber: float
+    is_recipe: bool
+    insight: str
 
 @app.route('/')
 def index():
@@ -39,7 +43,7 @@ def get_food_suggestions():
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
+            max_tokens=300,
             temperature=0.5
         )
 
@@ -65,9 +69,10 @@ def calculate_nutrition():
         system_prompt = (
             "You are a highly accurate and reliable nutritionist providing data from reputable sources, such as the USDA. "
             "Provide nutritional information in JSON format for calories, protein, fat, carbohydrates, and fiber based on the specified quantity and unit. "
-            "Ensure that values are accurate, consistent, and scaled proportionally from a standard serving size. "
-            "IMPORTANT: Respond ONLY with valid JSON in this exact format without any extra text: "
-            '{"calories": <number>, "protein": <number>, "fat": <number>, "carbohydrates": <number>, "fiber": <number>}'
+            "Ensure that values are accurate, consistent, and scaled proportionally from a standard serving size. Include an insightful one-sentence description of the food item"
+            "If the food item is a prepared dish/recipe (not a simple ingredient), set is_recipe to true. "
+            "IMPORTANT: Respond **only** with valid JSON in this exact format without any extra text: "
+            '{"calories": <number>, "protein": <number>, "fat": <number>, "carbohydrates": <number>, "fiber": <number>, "insight": <string>, "is_recipe": <boolean>}'
         )
 
         user_prompt = f"Provide precise nutritional information for {quantity} {quantity_unit} of {food_item} based on a standard serving size. Ensure values scale accurately."
@@ -75,34 +80,36 @@ def calculate_nutrition():
         print(f"User prompt: {user_prompt}")
 
         # Call OpenAI API with the constructed prompts
-        response = client.chat.completions.create(
+        response = client.beta.chat.completions.parse(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            max_tokens=50,
-            temperature=0.3
+            temperature=0.3,
+            response_format=NutritionScores
         )
 
         # Process the response content and convert to JSON
-        nutrition_text = response.choices[0].message.content.strip()
-        print(f"Received response: {nutrition_text}")
-
-        # Parse JSON response from OpenAI
-        nutrition_data = json.loads(nutrition_text)
-
-        # Validate the JSON response with Pydantic
-        scores = NutritionScores(**nutrition_data)
-
+        nutrition_data = response.choices[0].message.parsed
+        
+         # After getting nutrition_data, if it's a recipe, fetch YouTube links
+        recipe_urls = None
+        if nutrition_data.is_recipe:
+            recipe_urls = get_youtube_links(food_item)
+        
         # Prepare the final response
         response_data = {
             "food_item": food_item,
             "quantity": quantity,
             "unit": quantity_unit,
-            "nutrition_info": scores.model_dump(),
+            "nutrition_info": nutrition_data.model_dump(),
+            "insight": nutrition_data.insight,
+            "is_recipe": nutrition_data.is_recipe,
+            "recipe_urls": recipe_urls,
             "status": "success"
         }
+        #print(f"Received response: {response_data}")
     except json.JSONDecodeError as je:
         print(f"JSON decode error: {je}")
         response_data = {
@@ -140,6 +147,35 @@ def calculate_nutrition():
         }
 
     return jsonify(response_data)
+
+def get_youtube_links(food_item, max_results=10):
+    try:
+        youtube = build('youtube', 'v3', 
+                       developerKey=os.environ.get('YOUTUBE_API_KEY'))
+        
+        search_response = youtube.search().list(
+            q=f"how to make {food_item} recipe",
+            part='id,snippet',  # Added snippet to get video titles
+            maxResults=max_results,
+            type='video'
+        ).execute()
+
+        videos = []
+        if search_response.get('items'):
+            for item in search_response['items']:
+                video_id = item['id']['videoId']
+                video_title = item['snippet']['title']
+                videos.append({
+                    'url': f"https://www.youtube.com/watch?v={video_id}",
+                    'id': video_id,
+                    'title': video_title
+                })
+            return videos
+        
+        return None
+    except Exception as e:
+        print(f"Error fetching YouTube links: {e}")
+        return None
 
 if __name__ == "__main__":
     app.run(debug=True)

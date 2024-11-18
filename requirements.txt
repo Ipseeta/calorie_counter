@@ -2,3 +2,4 @@ Flask
 pydantic
 python-dotenv
 openai
+google-api-python-client
