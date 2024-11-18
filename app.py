@@ -4,9 +4,10 @@ import os
 import json
 from openai import OpenAI, APIError, RateLimitError, APIConnectionError
 from dotenv import load_dotenv
-from pydantic import BaseModel, ValidationError
-import requests
+from pydantic import BaseModel
 from googleapiclient.discovery import build
+from typing import Optional, Any
+from http import HTTPStatus
 
 # Load environment variables from .env file
 load_dotenv()
@@ -25,6 +26,37 @@ class NutritionScores(BaseModel):
     fiber: float
     is_recipe: bool
     insight: str
+
+class APIException(Exception):
+    def __init__(self, message: str, status_code: int, error_type: str):
+        self.message = message
+        self.status_code = status_code
+        self.error_type = error_type
+        super().__init__(self.message)
+
+@app.errorhandler(APIException)
+def handle_api_exception(error):
+    response = {
+        "error": error.message,
+        "status": "error",
+        "error_type": error.error_type
+    }
+    return jsonify(response), error.status_code
+
+def validate_input(food_item: Optional[str], quantity: Any, unit: Optional[str]) -> None:
+    if not food_item:
+        raise APIException("Food item is required", HTTPStatus.BAD_REQUEST, "validation_error")
+    
+    try:
+        quantity = float(quantity)
+        if quantity <= 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        raise APIException("Invalid quantity value", HTTPStatus.BAD_REQUEST, "validation_error")
+    
+    valid_units = {"units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"}
+    if unit not in valid_units:
+        raise APIException("Invalid unit of measurement", HTTPStatus.BAD_REQUEST, "validation_error")
 
 @app.route('/')
 def index():
@@ -59,12 +91,18 @@ def get_food_suggestions():
 
 @app.route('/calculate_nutrition', methods=['POST'])
 def calculate_nutrition():
-    data = request.get_json()
-    food_item = data.get("food_item").lower()
-    quantity = data.get("quantity", 100)
-    quantity_unit = data.get("unit", "g")
-
     try:
+        data = request.get_json()
+        if not data:
+            raise APIException("No data provided", HTTPStatus.BAD_REQUEST, "validation_error")
+
+        food_item = data.get("food_item", "").lower().strip()
+        quantity = data.get("quantity")
+        quantity_unit = data.get("unit")
+
+        # Validate input
+        validate_input(food_item, quantity, quantity_unit)
+
         # Construct prompts for OpenAI API
         system_prompt = (
             "You are a highly accurate and reliable nutritionist providing data from reputable sources, such as the USDA. "
@@ -111,70 +149,64 @@ def calculate_nutrition():
         }
         #print(f"Received response: {response_data}")
     except json.JSONDecodeError as je:
-        print(f"JSON decode error: {je}")
-        response_data = {
-            "error": "Invalid response format from AI service",
-            "status": "error",
-            "error_type": "json_decode_error"
-        }  
-    except (APIError, RateLimitError, APIConnectionError) as api_error:
-        print(f"API error: {api_error}")
-        response_data = {
-            "error": "Our AI service is temporarily unavailable. Please try again later.",
-            "status": "error",
-            "error_type": "api_error"
-        }
-    except ValidationError as ve:
-        print(f"Validation error: {ve}")
-        response_data = {
-            "error": "Invalid response format received from AI.",
-            "status": "error",
-            "error_type": "validation_error"
-        }
-    except ValueError as ve:
-        print(f"Value error: {ve}")
-        response_data = {
-            "error": "Invalid input. Please check your values.",
-            "status": "error",
-            "error_type": "input_error"
-        }
+        raise APIException(
+            "Invalid JSON format in request",
+            HTTPStatus.BAD_REQUEST,
+            "json_decode_error"
+        )
+    except (APIError, RateLimitError) as api_error:
+        raise APIException(
+            "OpenAI service temporarily unavailable",
+            HTTPStatus.SERVICE_UNAVAILABLE,
+            "openai_api_error"
+        )
+    except APIConnectionError:
+        raise APIException(
+            "Could not connect to OpenAI service",
+            HTTPStatus.BAD_GATEWAY,
+            "connection_error"
+        )
     except Exception as e:
-        print(f"Unexpected error: {e}")
-        response_data = {
-            "error": "An unexpected error occurred. Please try again.",
-            "status": "error",
-            "error_type": "unknown_error"
-        }
+        app.logger.error(f"Unexpected error: {str(e)}")
+        raise APIException(
+            "An unexpected error occurred",
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+            "server_error"
+        )
 
     return jsonify(response_data)
 
-def get_youtube_links(food_item, max_results=10):
+def get_youtube_links(food_item: str, max_results: int = 10) -> Optional[list]:
+    if not os.environ.get('YOUTUBE_API_KEY'):
+        app.logger.error("YouTube API key not found")
+        return None
+
     try:
         youtube = build('youtube', 'v3', 
                        developerKey=os.environ.get('YOUTUBE_API_KEY'))
         
         search_response = youtube.search().list(
             q=f"how to make {food_item} recipe",
-            part='id,snippet',  # Added snippet to get video titles
+            part='id,snippet',
             maxResults=max_results,
-            type='video'
+            type='video',
+            regionCode='IN'
         ).execute()
 
-        videos = []
-        if search_response.get('items'):
-            for item in search_response['items']:
-                video_id = item['id']['videoId']
-                video_title = item['snippet']['title']
-                videos.append({
-                    'url': f"https://www.youtube.com/watch?v={video_id}",
-                    'id': video_id,
-                    'title': video_title
-                })
-            return videos
+        if not search_response.get('items'):
+            app.logger.warning(f"No videos found for {food_item}")
+            return None
+
+        videos = [{
+            'url': f"https://www.youtube.com/watch?v={item['id']['videoId']}",
+            'id': item['id']['videoId'],
+            'title': item['snippet']['title']
+        } for item in search_response['items']]
         
-        return None
+        return videos
+
     except Exception as e:
-        print(f"Error fetching YouTube links: {e}")
+        app.logger.error(f"YouTube API error: {str(e)}")
         return None
 
 if __name__ == "__main__":

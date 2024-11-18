@@ -15,39 +15,78 @@ function debounce(func, wait) {
 
 document.addEventListener("DOMContentLoaded", fetchFoodSuggestions);
 function fetchFoodSuggestions() {
+    const datalist = document.getElementById("food-suggestions");
+    
     fetch("/get_food_suggestions")
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            const datalist = document.getElementById("food-suggestions");
-
-            // Clear any existing options
             datalist.innerHTML = "";
 
-            if (data.suggestions) {
+            if (data.suggestions && Array.isArray(data.suggestions)) {
                 data.suggestions.forEach(food => {
                     const option = document.createElement("option");
                     option.value = food;
                     datalist.appendChild(option);
                 });
             } else {
-                console.error("Error: No food suggestions received");
+                console.error("Invalid food suggestions format");
             }
         })
         .catch(error => {
             console.error("Error fetching food suggestions:", error);
+            // Optionally show error to user
+            const foodInput = document.getElementById("food_item");
+            foodInput.placeholder = "Error loading suggestions. Please try typing...";
         });
 }
 
+// Add input validation
+function validateInput(foodItem, quantity, unit) {
+    const errors = [];
+    
+    if (!foodItem.trim()) {
+        errors.push("Please enter a food item");
+    }
+    
+    if (!quantity || quantity <= 0) {
+        errors.push("Please enter a valid quantity");
+    }
+    
+    const validUnits = ["units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"];
+    if (!validUnits.includes(unit)) {
+        errors.push("Please select a valid unit");
+    }
+    
+    return errors;
+}
+
+// Update submitForm with better error handling
 async function submitForm() {
     const loader = document.getElementById('loader');
     const result = document.getElementById('result');
     
-    loader.style.display = 'block';
-    result.innerHTML = '';  // Clear previous results
-    
     const foodItem = document.getElementById("food_item").value;
     const quantity = document.getElementById("quantity").value;
     const quantityUnit = document.getElementById("quantity_unit").value;
+
+    // Validate input
+    const validationErrors = validateInput(foodItem, quantity, quantityUnit);
+    if (validationErrors.length > 0) {
+        result.innerHTML = `
+            <div style="color: red; padding: 10px; border: 1px solid red; border-radius: 4px; margin-top: 10px;">
+                ${validationErrors.map(error => `<p style="margin: 5px 0;">${error}</p>`).join('')}
+            </div>
+        `;
+        return;
+    }
+
+    loader.style.display = 'block';
+    result.innerHTML = '';
 
     try {
         const response = await fetch("/calculate_nutrition", {
@@ -61,10 +100,27 @@ async function submitForm() {
                 unit: quantityUnit 
             })
         });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
         
         if (data.error) {
-            result.innerHTML = `<p style="color: red;">${data.error}</p>`;
+            result.innerHTML = `
+                <div style="
+                    color: red;
+                    padding: 15px;
+                    border: 1px solid red;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                    background-color: rgba(255,0,0,0.1);
+                ">
+                    <p style="margin: 0;">${data.error}</p>
+                    ${data.error_type ? `<p style="margin: 5px 0 0; font-size: 0.9em; opacity: 0.8;">Error type: ${data.error_type}</p>` : ''}
+                </div>
+            `;
         } else {
             result.innerHTML = `
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
@@ -152,7 +208,19 @@ async function submitForm() {
                 </div>`;
         }
     } catch (error) {
-        result.innerHTML = 'An error occurred while processing your request.';
+        result.innerHTML = `
+            <div style="
+                color: red;
+                padding: 15px;
+                border: 1px solid red;
+                border-radius: 4px;
+                margin-top: 10px;
+                background-color: rgba(255,0,0,0.1);
+            ">
+                <p style="margin: 0;">An error occurred while processing your request.</p>
+                <p style="margin: 5px 0 0; font-size: 0.9em; opacity: 0.8;">${error.message}</p>
+            </div>
+        `;
     } finally {
         loader.style.display = 'none';
     }
