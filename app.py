@@ -17,7 +17,7 @@ app = Flask(__name__)
 # Set up OpenAI API key
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Define the expected response schema using Pydantic
+# Define the expected response schema using Pydantic for nutrition scores
 class NutritionScores(BaseModel):
     calories: float
     protein: float
@@ -27,6 +27,11 @@ class NutritionScores(BaseModel):
     is_recipe: bool
     insight: str
 
+# Define the expected response schema using Pydantic for food suggestions
+class FoodSuggestions(BaseModel):
+    suggestions: list[str]
+
+# Custom exception class for API errors
 class APIException(Exception):
     def __init__(self, message: str, status_code: int, error_type: str):
         self.message = message
@@ -34,6 +39,7 @@ class APIException(Exception):
         self.error_type = error_type
         super().__init__(self.message)
 
+# Error handler for API exceptions
 @app.errorhandler(APIException)
 def handle_api_exception(error):
     response = {
@@ -43,6 +49,7 @@ def handle_api_exception(error):
     }
     return jsonify(response), error.status_code
 
+# Function to validate input
 def validate_input(food_item: Optional[str], quantity: Any, unit: Optional[str]) -> None:
     if not food_item:
         raise APIException("Food item is required", HTTPStatus.BAD_REQUEST, "validation_error")
@@ -62,33 +69,37 @@ def validate_input(food_item: Optional[str], quantity: Any, unit: Optional[str])
 def index():
     return render_template('index.html')
 
+# Route for fetching food suggestions
 @app.route('/get_food_suggestions', methods=['GET'])
 def get_food_suggestions():
     try:
-        # Modified prompt for food suggestions
         prompt = (
-            "Provide a list of top 20 popular Indian dishes eaten in breakfast, lunch, and dinner."
-            "IMPORTANT:Provide the list as plain text, with each dish name separated by a comma. "
-            "Examples should include a mix of popular dishes from Western, Asian, Mediterranean, and Indian cuisines, without any extra text or full stops."
+            "Provide a mix of list of top 20 popular dishes eaten in breakfast, lunch, and dinner mostly in Indian households."
+            "IMPORTANT: Provide the only the list without any explanation or extra text or numbers"
         )
 
-        response = client.chat.completions.create(
+        response = client.beta.chat.completions.parse(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,
+            response_format=FoodSuggestions,
             temperature=0.5
         )
 
-        food_suggestions_text = response.choices[0].message.content.strip()
-        dishes = [dish.strip() for dish in food_suggestions_text.split(',')]
-        print(f"Food suggestions received from OpenAI: {dishes}")
-
-        return jsonify({"suggestions": dishes})
+        # Process the response content and convert to JSON
+        suggestions_dict = response.choices[0].message.parsed
+        print(f"Food suggestions received from OpenAI: {suggestions_dict}")
+        # Convert Pydantic model to dict before jsonifying
+        return suggestions_dict.model_dump()
 
     except Exception as e:
-        print(f"Error fetching food suggestions: {e}")
-        return jsonify({"error": "Could not retrieve food suggestions"}), 500
+        app.logger.error(f"Error fetching food suggestions: {str(e)}")
+        raise APIException(
+            "Failed to fetch food suggestions",
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+            "food_suggestions_error"
+        )
 
+# Route for calculating nutrition
 @app.route('/calculate_nutrition', methods=['POST'])
 def calculate_nutrition():
     try:
@@ -176,6 +187,7 @@ def calculate_nutrition():
 
     return jsonify(response_data)
 
+# Function to fetch YouTube links for recipes
 def get_youtube_links(food_item: str, max_results: int = 10) -> Optional[list]:
     if not os.environ.get('YOUTUBE_API_KEY'):
         app.logger.error("YouTube API key not found")
