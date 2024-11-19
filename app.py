@@ -8,6 +8,8 @@ from pydantic import BaseModel
 from googleapiclient.discovery import build
 from typing import Optional, Any
 from http import HTTPStatus
+from dataclasses import dataclass
+from typing import Dict, Optional
 
 # Load environment variables from .env file
 load_dotenv()
@@ -67,6 +69,9 @@ def validate_input(food_item: Optional[str], quantity: Any, unit: Optional[str])
     except (TypeError, ValueError):
         raise APIException("Invalid quantity value", HTTPStatus.BAD_REQUEST, "validation_error")
     
+    if not unit:
+        raise APIException("Please select a unit of measurement", HTTPStatus.BAD_REQUEST, "validation_error")
+    
     valid_units = {"units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"}
     if unit not in valid_units:
         raise APIException("Invalid unit of measurement", HTTPStatus.BAD_REQUEST, "validation_error")
@@ -104,6 +109,90 @@ def get_food_suggestions():
             HTTPStatus.INTERNAL_SERVER_ERROR,
             "food_suggestions_error"
         )
+
+@dataclass
+class HealthScore:
+    score: float
+    message: str
+    color: str
+
+class NutritionAnalyzer:
+    # Define ideal ranges for nutrients (per serving)
+    IDEAL_RANGES = {
+        'calories': {'min': 100, 'max': 500, 'weight': 1.5},
+        'protein': {'min': 5, 'max': 30, 'weight': 2},
+        'fat': {'min': 5, 'max': 20, 'weight': 1},
+        'carbohydrates': {'min': 15, 'max': 60, 'weight': 1},
+        'fiber': {'min': 3, 'max': 10, 'weight': 1.5},
+        'sugar': {'min': 0, 'max': 10, 'weight': -1.5},  # negative weight
+        'sodium': {'min': 0, 'max': 400, 'weight': -1}   # negative weight
+    }
+
+    @staticmethod
+    def _extract_numeric_value(value_str: str) -> Optional[float]:
+        try:
+            # Extract numeric value from string (remove units)
+            return float(''.join(c for c in value_str if c.isdigit() or c == '.'))
+        except ValueError:
+            return None
+
+    @classmethod
+    def calculate_health_score(cls, nutrition_info: Dict[str, str]) -> HealthScore:
+        total_score = 0
+        total_weight = 0
+
+        # Calculate score for each nutrient
+        for nutrient, range_info in cls.IDEAL_RANGES.items():
+            if nutrient in nutrition_info:
+                value = cls._extract_numeric_value(nutrition_info[nutrient])
+                if value is not None:
+                    score = 0
+                    if value < range_info['min']:
+                        score = (value / range_info['min']) * 5
+                    elif value > range_info['max']:
+                        score = 5 * (range_info['max'] / value)
+                    else:
+                        score = 5 + ((value - range_info['min']) / 
+                                   (range_info['max'] - range_info['min'])) * 5
+
+                    total_score += score * abs(range_info['weight'])
+                    total_weight += abs(range_info['weight'])
+
+        # Calculate final score out of 10
+        if total_weight == 0:
+            final_score = 5  # Default middle score if no valid nutrients
+        else:
+            final_score = round((total_score / total_weight) * 2) / 2  # Round to nearest 0.5
+            final_score = max(1, min(10, final_score))  # Ensure score is between 1 and 10
+
+        return cls._get_health_score_details(final_score)
+
+    @staticmethod
+    def _get_health_score_details(score: float) -> HealthScore:
+        if score >= 8:
+            return HealthScore(
+                score=score,
+                message="Excellent choice! This food is highly nutritious.",
+                color="#2ecc71"  # Green
+            )
+        elif score >= 6:
+            return HealthScore(
+                score=score,
+                message="Good choice! This food has balanced nutrition.",
+                color="#f1c40f"  # Yellow
+            )
+        elif score >= 4:
+            return HealthScore(
+                score=score,
+                message="Moderate nutritional value. Consider balancing with other healthy foods.",
+                color="#e67e22"  # Orange
+            )
+        else:
+            return HealthScore(
+                score=score,
+                message="This food should be consumed in moderation as part of a balanced diet.",
+                color="#e74c3c"  # Red
+            )
 
 # Route for calculating nutrition
 @app.route('/calculate_nutrition', methods=['POST'])
@@ -148,7 +237,10 @@ def calculate_nutrition():
         # Process the response content and convert to JSON
         nutrition_data = response.choices[0].message.parsed
         
-         # After getting nutrition_data, if it's a recipe, fetch YouTube links
+        # Calculate health score
+        health_score = NutritionAnalyzer.calculate_health_score(nutrition_data.model_dump())
+        
+        # Get recipe URLs if needed
         recipe_urls = None
         if nutrition_data.is_recipe:
             recipe_urls = get_youtube_links(food_item)
@@ -162,6 +254,11 @@ def calculate_nutrition():
             "insight": nutrition_data.insight,
             "is_recipe": nutrition_data.is_recipe,
             "recipe_urls": recipe_urls,
+            "health_score": {
+                "score": health_score.score,
+                "message": health_score.message,
+                "color": health_score.color
+            },
             "status": "success"
         }
         #print(f"Received response: {response_data}")

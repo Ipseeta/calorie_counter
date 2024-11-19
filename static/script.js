@@ -57,6 +57,10 @@ function validateInput(foodItem, quantity, unit) {
         errors.push("Please enter a valid quantity");
     }
     
+    if (!unit || unit === "") {
+        errors.push("Please select a unit of measurement");
+    }
+    
     const validUnits = ["units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"];
     if (!validUnits.includes(unit)) {
         errors.push("Please select a valid unit");
@@ -77,6 +81,58 @@ function formatNutrientName(nutrient) {
     return formatMap[nutrient] || 
            nutrient.charAt(0).toUpperCase() + 
            nutrient.slice(1).replace(/_/g, ' ');
+}
+
+// Remove the calculateHealthScore function and simplify generateHealthScoreHTML
+function generateHealthScoreHTML(healthScore) {
+    return `
+        <div style="
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        ">
+            <h3 style="margin: 0 0 15px 0; color: #2c3e50;">Health Score</h3>
+            <div style="
+                background: #f5f5f5;
+                height: 20px;
+                border-radius: 10px;
+                position: relative;
+                overflow: hidden;
+            ">
+                <div style="
+                    width: ${healthScore.score * 10}%;
+                    height: 100%;
+                    background-color: ${healthScore.color};
+                    transition: width 0.5s ease-in-out;
+                "></div>
+            </div>
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                margin-top: 5px;
+                color: #666;
+                font-size: 14px;
+            ">
+                <span>1</span>
+                <span style="
+                    color: ${healthScore.color};
+                    font-weight: bold;
+                    font-size: 16px;
+                ">${healthScore.score}/10</span>
+                <span>10</span>
+            </div>
+            <p style="
+                margin: 10px 0 0 0;
+                color: #666;
+                font-size: 14px;
+                text-align: center;
+            ">
+                ${healthScore.message}
+            </p>
+        </div>
+    `;
 }
 
 // Update submitForm with better error handling
@@ -140,6 +196,7 @@ async function submitForm() {
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 300px;">
                         <p style="margin-top: 15px; font-style: italic; color: #666;">${data.insight}</p>
+                        ${generateHealthScoreHTML(data.health_score)}
                         <table class="nutrition-table" style="
                             width: 100%;
                             margin: 20px 0;
@@ -172,53 +229,53 @@ async function submitForm() {
                                 `).join('')}
                             </tbody>
                         </table>
-                    </div>
-                    ${data.is_recipe && data.recipe_urls ? `
-                        <div style="flex: 0 0 300px;">
-                            <div style="
-                                background: white;
-                                padding: 15px;
-                                border-radius: 8px;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                                margin-top: 20px;
-                            ">
-                                <h3 style="margin-top: 0; color: #2c3e50;">Recipe Videos</h3>
-                                <div class="recipe-videos" style="
-                                    max-height: 500px;
-                                    overflow-y: auto;
-                                    padding-right: 10px;
+                        ${data.is_recipe && data.recipe_urls ? `
+                            <div style="flex: 0 0 300px;">
+                                <div style="
+                                    background: white;
+                                    padding: 15px;
+                                    border-radius: 8px;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                    margin-top: 20px;
                                 ">
-                                    ${data.recipe_urls.map((video, index) => `
-                                        <div style="margin-bottom: 20px;">
-                                            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-                                                <iframe 
-                                                    src="https://www.youtube.com/embed/${video.id}"
-                                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 4px;"
-                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                    allowfullscreen
-                                                ></iframe>
+                                    <h3 style="margin-top: 0; color: #2c3e50;">Recipe Videos</h3>
+                                    <div class="recipe-videos" style="
+                                        max-height: 500px;
+                                        overflow-y: auto;
+                                        padding-right: 10px;
+                                    ">
+                                        ${data.recipe_urls.map((video, index) => `
+                                            <div style="margin-bottom: 20px;">
+                                                <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                                                    <iframe 
+                                                        src="https://www.youtube.com/embed/${video.id}"
+                                                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 4px;"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowfullscreen
+                                                    ></iframe>
+                                                </div>
+                                                <div style="margin-top: 8px;">
+                                                    <a href="${video.url}" 
+                                                       target="_blank" 
+                                                       rel="noopener noreferrer"
+                                                       style="
+                                                        display: block;
+                                                        color: #3498db;
+                                                        text-decoration: none;
+                                                        font-size: 14px;
+                                                        line-height: 1.4;
+                                                       "
+                                                    >
+                                                        ${video.title}
+                                                    </a>
+                                                </div>
                                             </div>
-                                            <div style="margin-top: 8px;">
-                                                <a href="${video.url}" 
-                                                   target="_blank" 
-                                                   rel="noopener noreferrer"
-                                                   style="
-                                                    display: block;
-                                                    color: #3498db;
-                                                    text-decoration: none;
-                                                    font-size: 14px;
-                                                    line-height: 1.4;
-                                                   "
-                                                >
-                                                    ${video.title}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    `).join('')}
+                                        `).join('')}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ` : ''}
+                        ` : ''}
+                    </div>
                 </div>`;
         }
     } catch (error) {
