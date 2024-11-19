@@ -1,0 +1,44 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nutrition Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Calorie Counter</h1>
+        <form id="calorieForm">
+            <label for="food_item">Food Item:</label>
+            <input type="text" id="food_item" name="food_item" list="food-suggestions" required>
+            <datalist id="food-suggestions">
+                <!-- Options will be populated by JavaScript -->
+            </datalist>
+
+            <label for="quantity">Quantity:</label>
+            <div class="quantity-container">
+                <input type="number" id="quantity" name="quantity" required>
+                <select id="quantity_unit" name="quantity_unit">
+                    <option value="" disabled selected>Select unit</option>
+                    <option value="units">Pieces/Units</option>
+                    <option value="grams">Grams (g)</option>
+                    <option value="ml">Milliliters (ml)</option>
+                    <option value="bowl">Bowl</option>
+                    <option value="cup">Cup</option>
+                    <option value="tbsp">Tablespoon</option>
+                    <option value="tsp">Teaspoon</option>
+                </select>
+            </div>
+
+            <button type="button" onclick="submitForm()">Get Nutrition Info</button>
+        </form>
+
+        <h2>Result:</h2>
+        <div class="loader" id="loader"></div>
+        <div id="result"></div>
+    </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

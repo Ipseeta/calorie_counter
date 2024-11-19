@@ -1,0 +1,120 @@
+/* Base styles */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+@media (max-width: 600px) {
+    body { padding: 10px; }
+    form { padding: 15px; }
+    .quantity-container {
+        flex-direction: column;
+        gap: 5px;
+    }
+    #quantity, #quantity_unit { width: 100%; }
+    input[type="text"],
+    input[type="number"],
+    select,
+    button {
+        font-size: 16px;
+        padding: 12px;
+    }
+}
+
+form {
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+label {
+    font-weight: bold;
+    color: #34495e;
+    display: block;
+    margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.quantity-container {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.quantity-container input,
+.quantity-container select {
+    height: 42px;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+}
+
+.quantity-container input { width: 100px; }
+.quantity-container select { min-width: 100px; }
+
+button {
+    background-color: #3498db;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+button:hover { background-color: #2980b9; }
+
+#result {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 50px;
+    margin-top: 20px;
+}
+
+.loader {
+    display: none;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 4px solid #3498db;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+} 

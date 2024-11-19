@@ -1,6 +1,6 @@
 // static/script.js
 
-// Add this debounce function before your event listener
+// Utility function to prevent rapid-fire API calls
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -13,7 +13,10 @@ function debounce(func, wait) {
     };
 }
 
+// Fetch food suggestions when page loads
 document.addEventListener("DOMContentLoaded", fetchFoodSuggestions);
+
+// Fetches food suggestions from the backend API
 function fetchFoodSuggestions() {
     const datalist = document.getElementById("food-suggestions");
     
@@ -26,9 +29,9 @@ function fetchFoodSuggestions() {
         })
         .then(data => {
             datalist.innerHTML = "";
-
             if (data.suggestions && Array.isArray(data.suggestions)) {
                 data.suggestions.forEach(food => {
+
                     const option = document.createElement("option");
                     option.value = food;
                     datalist.appendChild(option);
@@ -45,7 +48,7 @@ function fetchFoodSuggestions() {
         });
 }
 
-// Add input validation
+// Validates form input before submission
 function validateInput(foodItem, quantity, unit) {
     const errors = [];
     
@@ -67,7 +70,7 @@ function validateInput(foodItem, quantity, unit) {
     return errors;
 }
 
-// Add this function to format nutrient names
+// Formats nutrient names for display
 function formatNutrientName(nutrient) {
     const formatMap = {
         'vitamin_a': 'Vit A',
@@ -81,7 +84,7 @@ function formatNutrientName(nutrient) {
            nutrient.slice(1).replace(/_/g, ' ');
 }
 
-// Remove the calculateHealthScore function and simplify generateHealthScoreHTML
+// Generates HTML for health score display
 function generateHealthScoreHTML(healthScore) {
     return `
         <div style="
@@ -133,7 +136,7 @@ function generateHealthScoreHTML(healthScore) {
     `;
 }
 
-// Update submitForm with better error handling
+// Handles form submission and displays results
 async function submitForm() {
     const loader = document.getElementById('loader');
     const result = document.getElementById('result');

@@ -1,80 +1,161 @@
-# Nutrition Information and Recipe Finder
+# Calorie Counter App
 
-A Flask web application that provides nutritional information for food items and recipe videos for dishes. The application uses OpenAI's GPT-4 for accurate nutritional analysis and YouTube's API for recipe video suggestions.
+A Flask-based web application that provides nutritional information and health scores for food items, along with recipe videos when applicable.
 
 ## Features
 
-- 🔍 Real-time food item search suggestions
-- 📊 Detailed nutritional information including:
-  - Calories
-  - Protein
-  - Fat
-  - Carbohydrates
-  - Fiber
-- 🎥 Automatic recipe video suggestions for dishes
-- 📱 Mobile-responsive design
-- 💡 AI-powered insights about food items
+- 🍎 Get detailed nutrition information for any food item
+- 📊 Calculate health scores based on nutritional values
+- 🎥 Find recipe videos for dishes
+- 📱 Responsive design for mobile and desktop
+- 🔍 Auto-suggestions for common Indian dishes
+- 📈 Visual health score indicator
 
-## Technologies Used
+## Tech Stack
 
-- **Backend:**
-  - Flask (Python web framework)
-  - OpenAI GPT-4 API
-  - YouTube Data API v3
-  - Pydantic for data validation
+- **Backend**: Python/Flask
+- **Frontend**: HTML, JavaScript, CSS
+- **APIs**:
+  - OpenAI GPT-4 for nutrition analysis
+  - YouTube Data API for recipe videos
+- **Dependencies**: See `requirements.txt`
 
-- **Frontend:**
-  - HTML5
-  - CSS3
-  - JavaScript (Vanilla)
+## Project Structure
+
+```
+project/
+app/
+├── models/
+│ └── nutrition_models.py # Data models using Pydantic
+├── routes/
+│ ├── nutrition_routes.py # API endpoint handlers
+│ └── page_routes.py # Web page routes
+├── services/
+│ ├── nutrition_analyzer.py # Health score calculation
+│ ├── openai_service.py # OpenAI integration
+│ └── youtube_service.py # YouTube API integration
+├── static/
+│ └── js/
+│ └── app.js # Frontend logic
+└── templates/
+└── index.html # Main application template
+```
 
 ## Setup
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/calorie_counter.git
-cd calorie_counter
+git clone https://github.com/yourusername/calorie-counter.git
+cd calorie-counter
 ```
 
-2. Install required packages:
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file in the root directory with your API keys:
+3. Create a `.env` file in the root directory:
 ```env
 OPENAI_API_KEY=your_openai_api_key
 YOUTUBE_API_KEY=your_youtube_api_key
 ```
 
-4. Run the application and access the API:
+4. Run the application:
 ```bash
-export FLASK_APP=app
-flask run
+python3 wsgi.py
 ```
-Access the application at http://127.0.0.1:5000 in your web browser
 
-## Usage
 
-1. Enter a food item in the search box
-2. Specify the quantity and unit of measurement
-3. Click "Get Nutrition Info"
-4. View the nutritional information and recipe videos (if available)
+## 📡 API Endpoints
 
-## API Endpoints
+### Food Suggestions
 
-- `GET /`: Main application page
-- `GET /get_food_suggestions`: Returns food suggestions for autocomplete
-- `POST /calculate_nutrition`: Calculates nutritional information for a given food item
+### GET `/get_food_suggestions`
+Returns a list of food suggestions for autocomplete functionality.
+
+### Nutrition Calculation
+
+### POST `/calculate_nutrition`
+Calculate nutrition information for a food item.
+
+**Request Body:**
+```json
+{
+    "food_item": "string",
+    "quantity": "number",
+    "unit": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "food_item": "string",
+    "quantity": "number",
+    "unit": "string",
+    "nutrition_info": {
+        "calories": "string",
+        "protein": "string",
+        ...
+    },
+    "health_score": {
+        "score": "number",
+        "message": "string",
+        "color": "string"
+    },
+    "is_recipe": "boolean",
+    "recipe_urls": [
+        {
+            "url": "string",
+            "id": "string",
+            "title": "string"
+        }
+    ]
+}
+```
+
+## Health Score Calculation
+
+The health score (1-10) is calculated based on:
+- Caloric content
+- Protein content
+- Fat content
+- Carbohydrates
+- Fiber content
+- Sugar content (negative impact)
+- Sodium content (negative impact)
+
+Score ranges:
+- 8-10: Excellent nutritional value (Green)
+- 6-7.9: Good nutritional value (Yellow)
+- 4-5.9: Moderate nutritional value (Orange)
+- 1-3.9: Limited nutritional value (Red)
+
+## 🛡️ Error Handling
+
+The application handles various error scenarios:
+
+- Invalid input validation
+- API service failures
+- Data processing errors
+- Network connectivity issues
+
+Error responses follow the format:
+```json
+{
+    "error": "string",
+    "status_code": "number",
+    "error_code": "string"
+}
+```
 
 ## Contributing
 
 1. Fork the repository
-2. Create a new branch (`git checkout -b feature/improvement`)
-3. Make your changes
-4. Commit your changes (`git commit -am 'Add new feature'`)
-5. Push to the branch (`git push origin feature/improvement`)
-6. Create a Pull Request
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
@@ -82,6 +163,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- OpenAI for providing the GPT-4 API
-- YouTube Data API for recipe video integration
-- Flask community for the excellent web framework
+- OpenAI GPT-4o for nutrition analysis
+- YouTube Data API for recipe videos
+- Flask framework and its community
+
