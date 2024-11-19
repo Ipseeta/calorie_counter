@@ -10,6 +10,7 @@ def index():
 
 @page_bp.route('/favicon.ico')
 def favicon():
+    print(f"favicon requested from {current_app.root_path}")
     return send_from_directory(
         os.path.join(current_app.root_path, 'static/favicon'),
         'favicon.ico', 
@@ -18,8 +19,9 @@ def favicon():
 
 @page_bp.route('/site.webmanifest')
 def webmanifest():
+    print(f"webmanifest requested from {os.path.join(current_app.root_path, 'static')}")
     return send_from_directory(
-        os.path.join(current_app.root_path, 'static/favicon'),
+        os.path.join(current_app.root_path, 'static'),
         'site.webmanifest',
         mimetype='application/manifest+json'
     )
