@@ -127,7 +127,7 @@ def calculate_nutrition():
             "Ensure that values are accurate, consistent, and scaled proportionally from a standard serving size. Include an insightful one-sentence description of the food item"
             "If the food item is a prepared dish/recipe (not a simple ingredient), set is_recipe to true. "
             "IMPORTANT: Respond **only** with valid JSON in this exact format without any extra text: "
-            '{"calories": <string>, "protein": <string>, "fat": <string>, "carbohydrates": <string>, "fiber": <string>, "sugar": <string>, "sodium": <string>, "vitamin A": <string>, "vitamin C": <string>, "calcium": <string>, "iron": <string>, "insight": <string>, "is_recipe": <boolean>}'
+            '{"calories": <string>, "protein": <string>, "fat": <string>, "carbohydrates": <string>, "fiber": <string>, "sugar": <string>, "sodium": <string>, "vitamin_a": <string>, "vitamin_c": <string>, "calcium": <string>, "iron": <string>, "insight": <string>, "is_recipe": <boolean>}'
         )
 
         user_prompt = f"Provide precise nutritional information for {quantity} {quantity_unit} of {food_item} based on a standard serving size. Ensure values scale accurately."
