@@ -33,6 +33,7 @@ class NutritionScores(BaseModel):
     calcium: str
     iron: str
     is_recipe: bool
+    is_valid_food: bool
     insight: str
 
 # Define the expected response schema using Pydantic for food suggestions
@@ -138,6 +139,14 @@ class NutritionAnalyzer:
 
     @classmethod
     def calculate_health_score(cls, nutrition_info: Dict[str, str]) -> HealthScore:
+        # Check if the food is valid first
+        if not nutrition_info.get('is_valid_food', True):  # Default to True if not present
+            return HealthScore(
+                score=0,
+                message="Invalid food item. Please enter a valid food.",
+                color="#e74c3c"  # Red
+            )
+
         total_score = 0
         total_weight = 0
 
@@ -215,8 +224,9 @@ def calculate_nutrition():
             "Provide nutritional information in JSON format for calories, protein, fat, carbohydrates, fiber, sugar, sodium, vitamin A, vitamin C, calcium, and iron with units based on the specified quantity and unit. "
             "Ensure that values are accurate, consistent, and scaled proportionally from a standard serving size. Include an insightful one-sentence description of the food item"
             "If the food item is a prepared dish/recipe (not a simple ingredient), set is_recipe to true. "
+            "If the food item is not a valid food item, set is_valid_food to false. "
             "IMPORTANT: Respond **only** with valid JSON in this exact format without any extra text: "
-            '{"calories": <string>, "protein": <string>, "fat": <string>, "carbohydrates": <string>, "fiber": <string>, "sugar": <string>, "sodium": <string>, "vitamin_a": <string>, "vitamin_c": <string>, "calcium": <string>, "iron": <string>, "insight": <string>, "is_recipe": <boolean>}'
+            '{"calories": <string>, "protein": <string>, "fat": <string>, "carbohydrates": <string>, "fiber": <string>, "sugar": <string>, "sodium": <string>, "vitamin_a": <string>, "vitamin_c": <string>, "calcium": <string>, "iron": <string>, "insight": <string>, "is_recipe": <boolean>, "is_valid_food": <boolean>}'
         )
 
         user_prompt = f"Provide precise nutritional information for {quantity} {quantity_unit} of {food_item} based on a standard serving size. Ensure values scale accurately."
@@ -253,6 +263,7 @@ def calculate_nutrition():
             "nutrition_info": nutrition_data.model_dump(),
             "insight": nutrition_data.insight,
             "is_recipe": nutrition_data.is_recipe,
+            "is_valid_food": nutrition_data.is_valid_food,
             "recipe_urls": recipe_urls,
             "health_score": {
                 "score": health_score.score,

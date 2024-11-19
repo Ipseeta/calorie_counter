@@ -57,12 +57,10 @@ function validateInput(foodItem, quantity, unit) {
         errors.push("Please enter a valid quantity");
     }
     
+    const validUnits = ["units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"];
     if (!unit || unit === "") {
         errors.push("Please select a unit of measurement");
-    }
-    
-    const validUnits = ["units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"];
-    if (!validUnits.includes(unit)) {
+    } else if (!validUnits.includes(unit)) {
         errors.push("Please select a valid unit");
     }
     
@@ -195,40 +193,42 @@ async function submitForm() {
             result.innerHTML = `
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 300px;">
-                        <p style="margin-top: 15px; font-style: italic; color: #666;">${data.insight}</p>
-                        ${generateHealthScoreHTML(data.health_score)}
-                        <table class="nutrition-table" style="
-                            width: 100%;
-                            margin: 20px 0;
-                            border-collapse: collapse;
-                            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-                            border-radius: 8px;
-                            overflow: hidden;
-                        ">
-                        <p>Nutrition Information for ${data.quantity} ${data.unit} of ${data.food_item}:</p>
-                            <thead>
-                                <tr style="
-                                    background-color: #4CAF50;
-                                    color: white;
-                                ">
-                                    <th style="padding: 15px; text-align: left;">Nutrient</th>
-                                    <th style="padding: 15px; text-align: right;">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            ${Object.entries(data.nutrition_info)
-                                .filter(([nutrient]) => !['insight', 'is_recipe', 'recipe_urls'].includes(nutrient))
-                                .map(([nutrient, value], index) => `
+                        <p style="margin-top: 15px; font-style: italic; color: #666;">${data.insight || ''}</p>
+                        ${data.is_valid_food && data.health_score ? generateHealthScoreHTML(data.health_score) : ''}
+                        ${data.is_valid_food ? `
+                            <table class="nutrition-table" style="
+                                width: 100%;
+                                margin: 20px 0;
+                                border-collapse: collapse;
+                                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                                border-radius: 8px;
+                                overflow: hidden;
+                            ">
+                            <p>Nutrition Information for ${data.quantity} ${data.unit} of ${data.food_item}:</p>
+                                <thead>
                                     <tr style="
-                                        background-color: ${index % 2 === 0 ? '#f8f9fa' : 'white'};
-                                        border-bottom: 1px solid #ddd;
+                                        background-color: #4CAF50;
+                                        color: white;
                                     ">
-                                        <td style="padding: 12px 15px; text-align: left;">${formatNutrientName(nutrient)}</td>
-                                        <td style="padding: 12px 15px; text-align: right;">${value}</td>
+                                        <th style="padding: 15px; text-align: left;">Nutrient</th>
+                                        <th style="padding: 15px; text-align: right;">Amount</th>
                                     </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                ${Object.entries(data.nutrition_info)
+                                    .filter(([nutrient]) => !['insight', 'is_recipe', 'is_valid_food', 'recipe_urls'].includes(nutrient))
+                                    .map(([nutrient, value], index) => `
+                                        <tr style="
+                                            background-color: ${index % 2 === 0 ? '#f8f9fa' : 'white'};
+                                            border-bottom: 1px solid #ddd;
+                                        ">
+                                            <td style="padding: 12px 15px; text-align: left;">${formatNutrientName(nutrient)}</td>
+                                            <td style="padding: 12px 15px; text-align: right;">${value}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : ''}
                         ${data.is_recipe && data.recipe_urls ? `
                             <div style="flex: 0 0 300px;">
                                 <div style="
