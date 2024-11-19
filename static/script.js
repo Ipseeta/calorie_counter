@@ -65,6 +65,20 @@ function validateInput(foodItem, quantity, unit) {
     return errors;
 }
 
+// Add this function to format nutrient names
+function formatNutrientName(nutrient) {
+    const formatMap = {
+        'vitamin_a': 'Vit A',
+        'vitamin_c': 'Vit C',
+        // Add any other formatting rules here
+    };
+    
+    // Return formatted name if it exists in the map, otherwise capitalize first letter
+    return formatMap[nutrient] || 
+           nutrient.charAt(0).toUpperCase() + 
+           nutrient.slice(1).replace(/_/g, ' ');
+}
+
 // Update submitForm with better error handling
 async function submitForm() {
     const loader = document.getElementById('loader');
@@ -152,7 +166,7 @@ async function submitForm() {
                                         background-color: ${index % 2 === 0 ? '#f8f9fa' : 'white'};
                                         border-bottom: 1px solid #ddd;
                                     ">
-                                        <td style="padding: 12px 15px; text-align: left;">${nutrient}</td>
+                                        <td style="padding: 12px 15px; text-align: left;">${formatNutrientName(nutrient)}</td>
                                         <td style="padding: 12px 15px; text-align: right;">${value}</td>
                                     </tr>
                                 `).join('')}

@@ -19,11 +19,17 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Define the expected response schema using Pydantic for nutrition scores
 class NutritionScores(BaseModel):
-    calories: float
-    protein: float
-    fat: float
-    carbohydrates: float
-    fiber: float
+    calories: str
+    protein: str
+    fat: str
+    carbohydrates: str
+    fiber: str
+    sugar: str
+    sodium: str
+    vitamin_a: str
+    vitamin_c: str
+    calcium: str
+    iron: str
     is_recipe: bool
     insight: str
 
@@ -117,11 +123,11 @@ def calculate_nutrition():
         # Construct prompts for OpenAI API
         system_prompt = (
             "You are a highly accurate and reliable nutritionist providing data from reputable sources, such as the USDA. "
-            "Provide nutritional information in JSON format for calories, protein, fat, carbohydrates, and fiber based on the specified quantity and unit. "
+            "Provide nutritional information in JSON format for calories, protein, fat, carbohydrates, fiber, sugar, sodium, vitamin A, vitamin C, calcium, and iron with units based on the specified quantity and unit. "
             "Ensure that values are accurate, consistent, and scaled proportionally from a standard serving size. Include an insightful one-sentence description of the food item"
             "If the food item is a prepared dish/recipe (not a simple ingredient), set is_recipe to true. "
             "IMPORTANT: Respond **only** with valid JSON in this exact format without any extra text: "
-            '{"calories": <number>, "protein": <number>, "fat": <number>, "carbohydrates": <number>, "fiber": <number>, "insight": <string>, "is_recipe": <boolean>}'
+            '{"calories": <string>, "protein": <string>, "fat": <string>, "carbohydrates": <string>, "fiber": <string>, "sugar": <string>, "sodium": <string>, "vitamin A": <string>, "vitamin C": <string>, "calcium": <string>, "iron": <string>, "insight": <string>, "is_recipe": <boolean>}'
         )
 
         user_prompt = f"Provide precise nutritional information for {quantity} {quantity_unit} of {food_item} based on a standard serving size. Ensure values scale accurately."
