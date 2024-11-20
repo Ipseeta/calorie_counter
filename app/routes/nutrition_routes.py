@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from http import HTTPStatus
 from app.services.nutrition_analyzer import NutritionAnalyzer
 from app.services.openai_service import OpenAIService
@@ -6,10 +6,13 @@ from app.services.youtube_service import YouTubeService
 from app.exceptions.api_exceptions import APIException
 from typing import Optional, Any
 from app.config import Config
-
+import os
+import base64
+from werkzeug.utils import secure_filename
 # Blueprint for handling nutrition-related routes
 nutrition_bp = Blueprint('nutrition', __name__)
 analyzer = NutritionAnalyzer()
+openai_service = OpenAIService(api_key=Config.OPENAI_API_KEY)
 
 def validate_input(food_item: Optional[str], quantity: Any, unit: Optional[str]) -> None:
     """
@@ -46,7 +49,6 @@ def get_food_suggestions():
         JSON response containing food suggestions
     """
     try:
-        openai_service = OpenAIService(api_key=Config.OPENAI_API_KEY)
         suggestions = openai_service.get_food_suggestions()
         return jsonify(suggestions.model_dump())
 
@@ -77,7 +79,6 @@ def calculate_nutrition():
         validate_input(food_item, quantity, quantity_unit)
 
         # Get nutrition information
-        openai_service = OpenAIService(api_key=Config.OPENAI_API_KEY)
         nutrition_data = openai_service.get_nutrition_info(food_item, quantity, quantity_unit)
         
         # Calculate health score
@@ -126,3 +127,71 @@ def calculate_nutrition():
             HTTPStatus.INTERNAL_SERVER_ERROR,
             "server_error"
         )
+
+@nutrition_bp.route('/analyze_image', methods=['POST'])
+def analyze_image():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image uploaded'}), 400
+    
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': 'No image selected'}), 400
+    
+    try:        
+        # Analyze image with OpenAI using the image data
+        food_info = openai_service.get_food_item_from_image(file)
+        print(food_info)
+        
+        # Validate input
+        validate_input(food_info.food_item, food_info.quantity, food_info.unit)
+            
+        # Get nutrition info using existing function
+        nutrition_data = openai_service.get_nutrition_info(
+            food_info.food_item, 
+            float(food_info.quantity), 
+            food_info.unit
+        )
+            
+        # Calculate health score
+        health_score = analyzer.calculate_health_score(nutrition_data.model_dump())
+            
+        # Get recipe URLs if needed
+        recipe_urls = None
+        if nutrition_data.is_recipe:
+            youtube_service = YouTubeService(api_key=Config.YOUTUBE_API_KEY)
+            video_info_list = youtube_service.get_recipe_videos(food_info.food_item)
+            if video_info_list:
+                recipe_urls = [
+                    {
+                        "title": video.title,
+                        "url": video.url,
+                        "id": video.id
+                    }
+                    for video in video_info_list
+                ]
+        
+        # Prepare the final response
+        response_data = {
+            "food_item": food_info.food_item,
+            "quantity": float(food_info.quantity),
+            "unit": food_info.unit,
+            "nutrition_info": nutrition_data.model_dump(),
+            "insight": nutrition_data.insight,
+            "is_recipe": nutrition_data.is_recipe,
+            "is_valid_food": nutrition_data.is_valid_food,
+            "recipe_urls": recipe_urls,
+            "health_score": {
+                "score": health_score.score,
+                "message": health_score.message,
+                "color": health_score.color
+            },
+            "status": "success"
+        }
+        return jsonify(response_data)
+        
+    except ValueError as ve:
+        return jsonify({"error": str(ve), "status": "error"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+

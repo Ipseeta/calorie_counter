@@ -1,7 +1,8 @@
 from openai import OpenAI
-from app.models.nutrition_models import NutritionScores, FoodSuggestions
+from app.models.nutrition_models import NutritionScores, FoodSuggestions, FoodItem
 from app.exceptions.api_exceptions import APIException
 from http import HTTPStatus
+import base64
 
 class OpenAIService:
     """
@@ -70,6 +71,49 @@ class OpenAIService:
         except Exception as e:
             raise APIException(
                 message="Failed to get nutrition information from OpenAI",
+                status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+                error_type="openai_api_error"
+            ) 
+    def get_food_item_from_image(self, image_file):
+        """
+        Gets the food item from an image using OpenAI
+        """
+        # Read the image data
+        image_data = image_file.read()
+        
+        user_prompt = (
+            {
+                "type": "text", 
+                "text": """Analyze this food image and provide:
+                            1. The exact name of the food item
+                            2. The approximate quantity in a suitable unit ("units", "grams", "ml", "bowl", "cup", "tbsp", "tsp")
+                            IMPORTANT: Respond **only** with valid JSON in this exact format without any extra text:
+                            {"food_item": <string>, "quantity": <number>, "unit": <string>}
+                            The quantity should be a number and the unit should be one of the following: "units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"
+                            Format your response exactly like this example:
+                            food_item: Apple
+                            quantity: 1
+                            unit: pieces"""
+            },
+            {
+                "type": "image_url", 
+                "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(image_data).decode()}"}
+            }
+        )
+        try:
+            response = self.client.beta.chat.completions.parse(
+                model="gpt-4o",
+                messages=[
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format=FoodItem,
+                temperature=0.3
+            )
+            return response.choices[0].message.parsed
+
+        except Exception as e:
+            raise APIException(
+                message="Failed to get food item from image from OpenAI",
                 status_code=HTTPStatus.SERVICE_UNAVAILABLE,
                 error_type="openai_api_error"
             ) 

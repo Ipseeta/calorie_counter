@@ -33,3 +33,9 @@ class HealthScore(BaseModel):
     score: float
     message: str
     color: str
+
+class FoodItem(BaseModel):
+    """Model for food item information"""
+    food_item: str
+    quantity: float
+    unit: str
