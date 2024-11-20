@@ -44,9 +44,11 @@
             <button type="button" onclick="submitForm()">Get Nutrition Info</button>
         </form>
 
-        <h2>Result:</h2>
-        <div class="loader" id="loader"></div>
-        <div id="result"></div>
+        <div class="loader" id="loader" style="display: none;"></div>
+        <div id="results-container" style="display: none;">
+            <h2>Result:</h2>
+            <div id="result"></div>
+        </div>
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>

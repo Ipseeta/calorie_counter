@@ -140,6 +140,7 @@ function generateHealthScoreHTML(healthScore) {
 async function submitForm() {
     const loader = document.getElementById('loader');
     const result = document.getElementById('result');
+    const resultsContainer = document.getElementById('results-container');
     
     const foodItem = document.getElementById("food_item").value;
     const quantity = document.getElementById("quantity").value;
@@ -156,6 +157,8 @@ async function submitForm() {
         return;
     }
 
+    // Show loader and hide results
+    resultsContainer.style.display = 'none';
     loader.style.display = 'block';
     result.innerHTML = '';
 
@@ -297,6 +300,7 @@ async function submitForm() {
         `;
     } finally {
         loader.style.display = 'none';
+        resultsContainer.style.display = 'block';
     }
 }
 
