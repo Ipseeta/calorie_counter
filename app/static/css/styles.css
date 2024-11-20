@@ -24,11 +24,109 @@ body {
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
 }
 
-h1 {
-    color: var(--primary);
-    text-align: center;
-    font-size: 2rem;
+.header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin-bottom: 2rem;
+}
+
+.logo-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+}
+
+.logo-title:hover {
+    transform: scale(1.02);
+}
+
+.logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    animation: pulse 2s infinite;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+h1 {
+    margin: 0;
+    color: var(--text);
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .header {
+        margin-bottom: 1.5rem;
+    }
+
+    .logo-title {
+        gap: 8px;
+    }
+
+    .logo {
+        width: 28px;
+        height: 28px;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        margin-bottom: 1rem;
+    }
+
+    .logo-title {
+        gap: 6px;
+    }
+
+    .logo {
+        width: 24px;
+        height: 24px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .logo {
+        filter: drop-shadow(0 0 2px rgba(37, 99, 235, 0.3));
+    }
+}
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .logo {
+        animation: none;
+    }
+    
+    .logo-title {
+        transition: none;
+    }
 }
 
 form {
