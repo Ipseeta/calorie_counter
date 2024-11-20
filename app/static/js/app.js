@@ -237,6 +237,12 @@ function generateErrorHTML(error) {
     `;
 }
 
+function resetForm() {
+    document.getElementById('food_item').value = '';
+    document.getElementById('quantity').value = '';
+    document.getElementById('quantity_unit').value = '';
+}
+
 // Handles form submission and displays results
 async function submitForm() {
     const loader = document.getElementById('loader');
@@ -307,6 +313,7 @@ async function submitForm() {
                     </div>
                 </div>`;
         }
+        resetForm();
     } catch (error) {
         result.innerHTML = generateErrorHTML(error);
     } finally {
@@ -384,6 +391,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const result = document.getElementById('result');
         const modal = document.getElementById('imageModal');
         
+        modal.style.display = 'none';
+        resetUpload();  // Reset the upload form
         // Show loader and hide results
         loader.style.display = 'block';
         resultsContainer.style.display = 'none';

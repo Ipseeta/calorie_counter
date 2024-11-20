@@ -3,6 +3,7 @@ from app.models.nutrition_models import NutritionScores, FoodSuggestions, FoodIt
 from app.exceptions.api_exceptions import APIException
 from http import HTTPStatus
 import base64
+from flask import current_app
 
 class OpenAIService:
     """
@@ -84,9 +85,12 @@ class OpenAIService:
         user_prompt = (
             {
                 "type": "text", 
-                "text": """Analyze this food image and provide:
+                "text": """You are a food image analyzer:
+                        If this image contains food, provide:
                             1. The exact name of the food item
                             2. The approximate quantity in a suitable unit ("units", "grams", "ml", "bowl", "cup", "tbsp", "tsp")
+                            3. If this is NOT a food image (e.g., selfie, landscape, random image, etc.), respond with:
+                            {"error": "This image does not contain food. Please upload a food image."}
                             IMPORTANT: Respond **only** with valid JSON in this exact format without any extra text:
                             {"food_item": <string>, "quantity": <number>, "unit": <string>}
                             The quantity should be a number and the unit should be one of the following: "units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"
@@ -113,7 +117,38 @@ class OpenAIService:
 
         except Exception as e:
             raise APIException(
-                message="Failed to get food item from image from OpenAI",
+                message=e.message,
+                status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+                error_type="openai_api_error"
+            ) 
+        
+    def validate_food_item(self, food_item: str):
+        """
+        Validates the food item, quantity, and unit
+        """
+        current_app.logger.info("In validate_food_item for %s", food_item)
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o",
+                 messages=[
+                {
+                    "role": "system",
+                    "content": "You are a food validator. Respond with only 'true' if the input is a valid food item, or 'false' if it's not."
+                },
+                {
+                    "role": "user",
+                    "content": f"Is this a valid food item: {food_item}"
+                }
+            ],
+                temperature=0.3
+        )
+            validation_result = response.choices[0].message.content.strip().lower() == 'true'
+            current_app.logger.info("Validation result for %s: %s", food_item, validation_result)
+            return validation_result
+        except Exception as e:
+            print(f"Error in validate_food_item: {e}")
+            raise APIException(
+                message=str(e),
                 status_code=HTTPStatus.SERVICE_UNAVAILABLE,
                 error_type="openai_api_error"
             ) 

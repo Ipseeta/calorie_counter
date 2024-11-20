@@ -145,7 +145,7 @@ Error responses follow the format:
 {
     "error": "string",
     "status_code": "number",
-    "error_code": "string"
+    "error_type": "string"
 }
 ```
 

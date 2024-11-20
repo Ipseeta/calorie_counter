@@ -6,9 +6,8 @@ from app.services.youtube_service import YouTubeService
 from app.exceptions.api_exceptions import APIException
 from typing import Optional, Any
 from app.config import Config
-import os
-import base64
-from werkzeug.utils import secure_filename
+from PIL import Image, UnidentifiedImageError
+
 # Blueprint for handling nutrition-related routes
 nutrition_bp = Blueprint('nutrition', __name__)
 analyzer = NutritionAnalyzer()
@@ -130,21 +129,45 @@ def calculate_nutrition():
 
 @nutrition_bp.route('/analyze_image', methods=['POST'])
 def analyze_image():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image uploaded'}), 400
-    
-    file = request.files['image']
-    if file.filename == '':
-        return jsonify({'error': 'No image selected'}), 400
-    
-    try:        
+    try:
+        if 'image' not in request.files:
+            raise APIException(
+                message='No image file uploaded',
+                status_code=400,
+                error_type='MISSING_IMAGE'
+            )
+        
+        file = request.files['image']
+        if file.filename == '':
+            raise APIException(
+                message='No selected image file',
+                status_code=400,
+                error_type='EMPTY_IMAGE'
+            )
+        
+        # Validate file type
+        if not file.content_type.startswith('image/'):
+            raise APIException(
+                message='Uploaded file is not an image',
+                status_code=415,
+                error_type='INVALID_FILE_TYPE'
+            )
+            
+        # Validate image can be opened
+        try:
+            Image.open(file)
+            file.seek(0)  # Reset file pointer after checking
+        except UnidentifiedImageError:
+            raise APIException(
+                message='Invalid image file format',
+                status_code=400,
+                error_type='INVALID_IMAGE_FORMAT'
+            )
+            
         # Analyze image with OpenAI using the image data
         food_info = openai_service.get_food_item_from_image(file)
-        print(food_info)
-        
         # Validate input
         validate_input(food_info.food_item, food_info.quantity, food_info.unit)
-            
         # Get nutrition info using existing function
         nutrition_data = openai_service.get_nutrition_info(
             food_info.food_item, 
@@ -190,8 +213,18 @@ def analyze_image():
         return jsonify(response_data)
         
     except ValueError as ve:
-        return jsonify({"error": str(ve), "status": "error"}), 400
+        raise APIException(
+            message=str(ve),
+            status_code=400,
+            error_type='VALIDATION_ERROR'
+        )
     except Exception as e:
-        return jsonify({"error": str(e), "status": "error"}), 500
+        # Log unexpected errors for debugging
+        current_app.logger.error(f"Unexpected error in analyze_image: {str(e)}")
+        raise APIException(
+            message=e.message,
+            status_code=500,
+            error_type="INTERNAL_SERVER_ERROR"
+        )
 
 
