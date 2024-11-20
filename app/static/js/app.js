@@ -429,11 +429,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const loader = document.getElementById('loader');
         const result = document.getElementById('result');
-        const resultsContainer = document.getElementById('results-container');
-        const modal = document.getElementById('imageModal');
-        
+        const resultsContainer = document.getElementById('results-container');      
         // Show loader and hide results
         loader.style.display = 'block';
+        imageModal.style.display = 'none';
         resultsContainer.style.display = 'none';
         result.innerHTML = '';
 
@@ -449,18 +448,31 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (data.error) {
-                result.innerHTML = generateErrorHTML(data.error);
+                result.innerHTML = `
+                <div style="
+                    color: red;
+                    padding: 15px;
+                    border: 1px solid red;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                    background-color: rgba(255,0,0,0.1);
+                ">
+                    <p style="margin: 0;">${data.error}</p>
+                    ${data.error_type ? `<p style="margin: 5px 0 0; font-size: 0.9em; opacity: 0.8;">Error type: ${data.error_type}</p>` : ''}
+                </div>
+            `;
             } else {
                 result.innerHTML = `
-                    ${generateHealthScoreHTML(data.health_score)}
-                    ${generateNutritionTableHTML(data)}
-                    ${data.insight ? `<p class="insight">${data.insight}</p>` : ''}
-                    ${generateRecipeVideosHTML(data)}
-                `;
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 300px;">
+                        <p style="margin-top: 15px; font-style: italic; color: #666;">${data.insight || ''}</p>
+                        ${data.is_valid_food && data.health_score ? generateHealthScoreHTML(data.health_score) : ''}
+                        ${data.is_valid_food ? generateNutritionTableHTML(data) : ''}
+                        ${data.is_recipe && data.recipe_urls ? generateRecipeVideosHTML(data) : ''}
+                    </div>
+                </div>`;
             }
-
-            // Close modal and reset upload
-            modal.style.display = 'none';
+            //reset upload
             document.body.style.overflow = '';
             resetUpload();
 
@@ -468,6 +480,7 @@ document.addEventListener('DOMContentLoaded', function() {
             result.innerHTML = generateErrorHTML(error);
         } finally {
             loader.style.display = 'none';
+            imageModal.style.display = 'none';
             resultsContainer.style.display = 'block';
         }
     });
