@@ -386,4 +386,61 @@ select {
 
 .icon-button:active {
     background-color: rgba(0, 0, 0, 0.1);
+}
+
+.footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.footer a {
+    color: var(--primary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.footer a:hover {
+    opacity: 0.8;
+}
+
+.github-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .footer {
+        color: var(--text);
+    }
+    
+    .footer a {
+        color: var(--primary);
+    }
+    
+    .github-icon {
+        color: var(--text);
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .footer {
+        padding: 15px;
+        margin-top: 30px;
+    }
+}
+
+/* Safe area support */
+@supports (padding: env(safe-area-inset-bottom)) {
+    .footer {
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
 } 
