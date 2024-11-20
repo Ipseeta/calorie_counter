@@ -23,7 +23,7 @@
             <label for="food_item">Food Item:</label>
             <div class="search-container">
                 <input type="text" id="food_item" name="food_item" list="food-suggestions" required>
-                <button type="button" id="imageSearchBtn" class="icon-button" title="Search by image">
+                <button type="button" id="imageSearchBtn" class="icon-button" title="Search by image" aria-label="Upload food image">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <circle cx="12" cy="12" r="3"></circle>
@@ -71,9 +71,9 @@
             </div>
         </div>
 
+        <!-- Results Container -->
         <div class="loader" id="loader" style="display: none;"></div>
         <div id="results-container" style="display: none;">
-            <h2>Result:</h2>
             <div id="result"></div>
         </div>
     </div>

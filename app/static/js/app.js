@@ -322,130 +322,47 @@ async function submitForm() {
     }
 }
 
+// Image upload handling
 document.addEventListener('DOMContentLoaded', function() {
-// Fetch food suggestions when page loads
-    fetchFoodSuggestions();
-    // Add image upload functionality
-    const modal = document.getElementById('imageModal');
     const imageSearchBtn = document.getElementById('imageSearchBtn');
+    const imageModal = document.getElementById('imageModal');
     const closeBtn = document.querySelector('.close');
-    const dropZone = document.getElementById('dropZone');
     const imageInput = document.getElementById('imageInput');
+    const dropZone = document.getElementById('dropZone');
     const previewImage = document.getElementById('previewImage');
     const analyzeImageBtn = document.getElementById('analyzeImageBtn');
 
-    // Image search button opens modal
-    imageSearchBtn.onclick = function() {
-        modal.style.display = "block";
-    }
+    // Open modal on image button click
+    imageSearchBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        imageModal.style.display = 'block';
+        // Prevent body scrolling when modal is open
+        document.body.style.overflow = 'hidden';
+    });
 
-    // Close modal
-    closeBtn.onclick = function() {
-        modal.style.display = "none";
+    // Close modal handlers
+    closeBtn.addEventListener('click', function() {
+        imageModal.style.display = 'none';
+        document.body.style.overflow = '';
         resetUpload();
-    }
+    });
 
-    // Click outside modal to close
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
+    // Close on outside click
+    imageModal.addEventListener('click', function(e) {
+        if (e.target === imageModal) {
+            imageModal.style.display = 'none';
+            document.body.style.overflow = '';
             resetUpload();
         }
-    }
+    });
 
-    // Handle drag and drop
-    dropZone.ondragover = function(e) {
-        e.preventDefault();
-        dropZone.style.borderColor = 'var(--primary)';
-    }
+    // Prevent modal close on modal content click
+    document.querySelector('.modal-content').addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
 
-    dropZone.ondragleave = function(e) {
-        e.preventDefault();
-        dropZone.style.borderColor = 'var(--border)';
-    }
-
-    dropZone.ondrop = function(e) {
-        e.preventDefault();
-        handleFiles(e.dataTransfer.files);
-    }
-
-    // Handle click to upload
-    dropZone.onclick = function() {
-        imageInput.click();
-    }
-
-    imageInput.onchange = function() {
-        handleFiles(this.files);
-    }
-
-    // Handle image analysis
-    analyzeImageBtn.onclick = async function() {
-        const file = imageInput.files[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append('image', file);
-
-        const loader = document.getElementById('loader');
-        const resultsContainer = document.getElementById('results-container');
-        const result = document.getElementById('result');
-        const modal = document.getElementById('imageModal');
-        
-        modal.style.display = 'none';
-        resetUpload();  // Reset the upload form
-        // Show loader and hide results
-        loader.style.display = 'block';
-        resultsContainer.style.display = 'none';
-        result.innerHTML = '';
-
-        try {
-            const response = await fetch('/analyze_image', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-
-            // Use your existing result container structure
-            if (data.error) {
-                result.innerHTML = `
-                    <div style="
-                        color: red;
-                        padding: 15px;
-                        border: 1px solid red;
-                        border-radius: 4px;
-                        margin-top: 10px;
-                        background-color: rgba(255,0,0,0.1);
-                    ">
-                        <p style="margin: 0;">${data.error}</p>
-                        ${data.error_type ? `<p style="margin: 5px 0 0; font-size: 0.9em; opacity: 0.8;">Error type: ${data.error_type}</p>` : ''}
-                    </div>
-                `;
-            } else {
-                result.innerHTML = `
-                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 300px;">
-                        <p style="margin-top: 15px; font-style: italic; color: #666;">${data.insight || ''}</p>
-                        ${data.is_valid_food && data.health_score ? generateHealthScoreHTML(data.health_score) : ''}
-                        ${data.is_valid_food ? generateNutritionTableHTML(data) : ''}
-                        ${data.is_recipe && data.recipe_urls ? generateRecipeVideosHTML(data) : ''}
-                    </div>
-                </div>`;
-            }
-
-            // Close modal and show results
-            modal.style.display = 'none';
-            resultsContainer.style.display = 'block';
-
-     } catch (error) {
-        result.innerHTML = generateErrorHTML(error);
-        } finally {
-            loader.style.display = 'none';
-            resultsContainer.style.display = 'block';
-        }
-    }
-
+    // Handle file selection
     function handleFiles(files) {
         if (files.length === 0) return;
 
@@ -455,22 +372,119 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Size validation (e.g., 10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('Please upload an image smaller than 10MB');
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = function(e) {
             previewImage.src = e.target.result;
             previewImage.style.display = 'block';
             document.querySelector('.drop-zone-text').style.display = 'none';
             analyzeImageBtn.disabled = false;
-        }
+        };
         reader.readAsDataURL(file);
     }
 
+    // File input change handler
+    imageInput.addEventListener('change', function(e) {
+        handleFiles(this.files);
+    });
+
+    // Drop zone click handler
+    dropZone.addEventListener('click', function(e) {
+        e.preventDefault();
+        imageInput.click();
+    });
+
+    // Touch events for mobile
+    dropZone.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        imageInput.click();
+    }, { passive: false });
+
+    // Drag and drop handlers
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    // Add or update the analyzeImageBtn click handler
+    analyzeImageBtn.addEventListener('click', async function() {
+        const file = imageInput.files[0];
+        if (!file) return;
+
+        const loader = document.getElementById('loader');
+        const result = document.getElementById('result');
+        const resultsContainer = document.getElementById('results-container');
+        const modal = document.getElementById('imageModal');
+        
+        // Show loader and hide results
+        loader.style.display = 'block';
+        resultsContainer.style.display = 'none';
+        result.innerHTML = '';
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/analyze_image', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                result.innerHTML = generateErrorHTML(data.error);
+            } else {
+                result.innerHTML = `
+                    ${generateHealthScoreHTML(data.health_score)}
+                    ${generateNutritionTableHTML(data)}
+                    ${data.insight ? `<p class="insight">${data.insight}</p>` : ''}
+                    ${generateRecipeVideosHTML(data)}
+                `;
+            }
+
+            // Close modal and reset upload
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            resetUpload();
+
+        } catch (error) {
+            result.innerHTML = generateErrorHTML(error);
+        } finally {
+            loader.style.display = 'none';
+            resultsContainer.style.display = 'block';
+        }
+    });
+
+    // Make sure resetUpload is defined
     function resetUpload() {
         imageInput.value = '';
         previewImage.style.display = 'none';
+        previewImage.src = '';
         document.querySelector('.drop-zone-text').style.display = 'block';
         analyzeImageBtn.disabled = true;
-        dropZone.style.borderColor = 'var(--border)';
+        dropZone.classList.remove('dragover');
     }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+// Fetch food suggestions when page loads
+    fetchFoodSuggestions();
 });
 

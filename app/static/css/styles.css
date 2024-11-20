@@ -182,16 +182,16 @@ select {
     border: none;
     padding: 8px;
     cursor: pointer;
-    color: var(--primary);
-    border-radius: 50%;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s;
+    transition: background-color 0.3s;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .icon-button:hover {
-    background-color: rgba(37, 99, 235, 0.1);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .modal {
@@ -203,47 +203,54 @@ select {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 1000;
-    padding: 20px;
+    padding: 15px;
     box-sizing: border-box;
+    overflow-y: auto;
 }
 
 .modal-content {
     position: relative;
     background-color: white;
-    margin: 0 auto;
+    margin: 20px auto;
     padding: 20px;
     border-radius: 12px;
-    width: 100%;
+    width: 90%;
     max-width: 500px;
-    top: 50%;
-    transform: translateY(-50%);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    color: #333;
 }
 
 .close {
     position: absolute;
-    right: 20px;
+    right: 15px;
     top: 15px;
     font-size: 24px;
     font-weight: bold;
     color: #666;
     cursor: pointer;
-    transition: color 0.2s;
+    padding: 5px;
+    line-height: 1;
 }
 
-.close:hover {
-    color: #333;
+.upload-container {
+    margin: 15px 0;
 }
 
 .drop-zone {
     border: 2px dashed #ccc;
     border-radius: 8px;
-    padding: 30px 20px;
+    padding: 20px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
     background-color: #fafafa;
-    min-height: 150px;
+    min-height: 120px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -251,13 +258,13 @@ select {
 }
 
 .drop-zone:hover, .drop-zone.dragover {
-    border-color: #4CAF50;
+    border-color: var(--primary);
     background-color: rgba(76, 175, 80, 0.05);
 }
 
 .drop-zone-text {
     color: #666;
-    font-size: 16px;
+    font-size: 14px;
     margin-bottom: 10px;
 }
 
@@ -266,11 +273,12 @@ select {
     max-height: 200px;
     border-radius: 8px;
     margin: 10px 0;
+    object-fit: contain;
 }
 
 .analyze-btn {
     width: 100%;
-    padding: 10px 20px;
+    padding: 12px;
     background-color: var(--primary);
     color: white;
     border: none;
@@ -278,12 +286,7 @@ select {
     font-size: 16px;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin-top: 20px;
-    font-weight: 500;
-}
-
-.analyze-btn:not(:disabled):hover {
-    background-color: var(--primary-hover);
+    margin-top: 15px;
 }
 
 .analyze-btn:disabled {
@@ -291,28 +294,49 @@ select {
     cursor: not-allowed;
 }
 
-/* Media Queries */
+.analyze-btn:not(:disabled):hover {
+    background-color: var(--primary-hover);
+}
+
 @media (max-width: 768px) {
-    .modal {
+    .modal-content {
+        margin: 10px auto;
         padding: 15px;
+        width: 95%;
     }
 
-    .modal-content {
-        padding: 15px;
+    .modal h2 {
+        font-size: 1.2rem;
+        padding-right: 30px;
     }
 
     .drop-zone {
-        padding: 20px 15px;
-        min-height: 120px;
+        min-height: 100px;
+        padding: 15px;
     }
 
     .drop-zone-text {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .analyze-btn {
         padding: 10px;
         font-size: 14px;
+    }
+
+    .close {
+        right: 10px;
+        top: 10px;
+        font-size: 20px;
+    }
+
+    .icon-button {
+        padding: 12px;
+    }
+    
+    .icon-button svg {
+        width: 28px;
+        height: 28px;
     }
 }
 
@@ -322,16 +346,44 @@ select {
     }
 
     .modal-content {
+        margin: 5px auto;
         padding: 12px;
     }
 
-    .close {
-        right: 15px;
-        top: 12px;
-        font-size: 20px;
+    .drop-zone {
+        min-height: 80px;
+        padding: 12px;
     }
 
     #previewImage {
         max-height: 150px;
     }
+}
+
+@media (hover: none) {
+    .close {
+        padding: 8px 12px;
+    }
+
+    .drop-zone {
+        border: 2px solid #ccc;
+    }
+
+    .drop-zone-text {
+        color: var(--primary);
+        text-decoration: underline;
+    }
+}
+
+@supports (padding: max(0px)) {
+    .modal {
+        padding-left: max(15px, env(safe-area-inset-left));
+        padding-right: max(15px, env(safe-area-inset-right));
+        padding-top: max(15px, env(safe-area-inset-top));
+        padding-bottom: max(15px, env(safe-area-inset-bottom));
+    }
+}
+
+.icon-button:active {
+    background-color: rgba(0, 0, 0, 0.1);
 } 
