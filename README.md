@@ -1,56 +1,42 @@
-# Calorie Counter App
+# 🥗 Calorie Counter App
 
-A Flask-based web application that provides nutritional information and health scores for food items, along with recipe videos when applicable.
+A smart Flask application that analyzes nutritional content, provides health scores, and suggests recipe videos for food items, with a special focus on Indian cuisine.
 
-## Features
+## ✨ Key Features
 
-- 🍎 Get detailed nutrition information for any food item
-- 📊 Calculate health scores based on nutritional values
-- 🎥 Find recipe videos for dishes
-- 📱 Responsive design for mobile and desktop
-- 🔍 Auto-suggestions for common Indian dishes
-- 📈 Visual health score indicator
+- 🔍 Instant nutrition analysis for any food item
+- 💯 Smart health scoring system (1-10 scale)
+- 🎯 Recipe video recommendations
+- 🇮🇳 Indian cuisine specialization
+- 📱 Mobile-friendly interface
+- 🤖 AI-powered analysis using GPT-4o
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Backend**: Python/Flask
-- **Frontend**: HTML, JavaScript, CSS
-- **APIs**:
-  - OpenAI GPT-4 for nutrition analysis
-  - YouTube Data API for recipe videos
-- **Dependencies**: See `requirements.txt`
+- **Backend**: Flask (Python)
+- **Frontend**: HTML, CSS, JavaScript
+- **AI/ML**: OpenAI GPT-4o
+- **External APIs**: 
+  - OpenAI API
+  - YouTube Data API v3
 
-## Project Structure
-
+## 🗂️ Project Structure
 ```
-project/
 app/
-├── models/
-│ └── nutrition_models.py # Data models using Pydantic
-├── routes/
-│ ├── nutrition_routes.py # API endpoint handlers
-│ └── page_routes.py # Web page routes
-├── services/
-│ ├── nutrition_analyzer.py # Health score calculation
-│ ├── openai_service.py # OpenAI integration
-│ └── youtube_service.py # YouTube API integration
-├── static/
-│ └── js/
-│ └── app.js # Frontend logic
-└── templates/
-└── index.html # Main application template
+├── constants/      # Constants
+├── models/         # Data models
+├── routes/         # API endpoints
+├── services/       # Business logic
+├── static/         # Frontend assets
+└── templates/      # HTML templates
 ```
 
-## Setup
+## 🚀 Quick Start
 
-1. Clone the repository:
+1. **Clone & Install**
 ```bash
 git clone https://github.com/yourusername/calorie-counter.git
 cd calorie-counter
-```
-
-2. Install dependencies:
-```bash
 pip install -r requirements.txt
 ```
 
@@ -65,105 +51,51 @@ YOUTUBE_API_KEY=your_youtube_api_key
 python3 wsgi.py
 ```
 
+## 🔌 API Reference
 
-## 📡 API Endpoints
+### Food Analysis
+```http
+POST /calculate_nutrition
+Content-Type: application/json
 
-### Food Suggestions
-
-### GET `/get_food_suggestions`
-Returns a list of food suggestions for autocomplete functionality.
-
-### Nutrition Calculation
-
-### POST `/calculate_nutrition`
-Calculate nutrition information for a food item.
-
-**Request Body:**
-```json
 {
-    "food_item": "string",
-    "quantity": "number",
-    "unit": "string"
+  "food_item": "butter chicken",
+  "quantity": 100,
+  "unit": "g"
 }
 ```
 
-**Response:**
-```json
-{
-    "food_item": "string",
-    "quantity": "number",
-    "unit": "string",
-    "nutrition_info": {
-        "calories": "string",
-        "protein": "string",
-        ...
-    },
-    "health_score": {
-        "score": "number",
-        "message": "string",
-        "color": "string"
-    },
-    "is_recipe": "boolean",
-    "recipe_urls": [
-        {
-            "url": "string",
-            "id": "string",
-            "title": "string"
-        }
-    ]
-}
+### Auto-Suggestions
+```http
+GET /get_food_suggestions
 ```
 
-## Health Score Calculation
+## 🎯 Health Score System
 
-The health score (1-10) is calculated based on:
-- Caloric content
-- Protein content
-- Fat content
-- Carbohydrates
-- Fiber content
-- Sugar content (negative impact)
-- Sodium content (negative impact)
+Our health score (1-10) considers:
+- Protein content (+)
+- Fiber content (+)
+- Vitamins & minerals (+)
+- Sugar content (-)
+- Sodium levels (-)
 
-Score ranges:
-- 8-10: Excellent nutritional value (Green)
-- 6-7.9: Good nutritional value (Yellow)
-- 4-5.9: Moderate nutritional value (Orange)
-- 1-3.9: Limited nutritional value (Red)
+Score interpretation:
+- 8-10: Excellent 🟢
+- 6-7.9: Good 🟡
+- 4-5.9: Fair 🟠
+- 1-3.9: Limited 🔴
 
-## 🛡️ Error Handling
+## 🤝 Contributing
 
-The application handles various error scenarios:
+1. Fork
+2. Create feature branch (`git checkout -b feature/NewFeature`)
+3. Commit (`git commit -m 'Add NewFeature'`)
+4. Push (`git push origin feature/NewFeature`)
+5. Open PR
 
-- Invalid input validation
-- API service failures
-- Data processing errors
-- Network connectivity issues
 
-Error responses follow the format:
-```json
-{
-    "error": "string",
-    "status_code": "number",
-    "error_type": "string"
-}
-```
+## 🙏 Acknowledgments
 
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- OpenAI GPT-4o for nutrition analysis
-- YouTube Data API for recipe videos
-- Flask framework and its community
-
+- OpenAI team for GPT-4
+- YouTube API team
+- Flask community

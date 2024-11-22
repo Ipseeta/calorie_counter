@@ -1,99 +1,114 @@
-from typing import Dict, Optional
-from app.models.nutrition_models import HealthScore
-from app.utils.constants import NUTRIENT_RANGES
+from typing import Dict, Any
+from dataclasses import dataclass
+from app.constants.nutrition_constant import (
+    NUTRIENT_WEIGHTS,
+    DAILY_VALUES,
+    MICRONUTRIENTS,
+    SCORE_FEEDBACK,
+    DEFAULT_SCORE
+)
+
+@dataclass
+class HealthScore:
+    score: float
+    color: str
+    message: str
 
 class NutritionAnalyzer:
-    """
-    Analyzes nutrition information and calculates health scores
-    Uses predefined nutrient ranges for score calculation
-    """
-
-    IDEAL_RANGES = NUTRIENT_RANGES
-
-    @staticmethod
-    def _extract_numeric_value(value_str: str) -> Optional[float]:
+    @classmethod
+    def calculate_health_score(cls, nutrition_info: Dict[str, Any]) -> HealthScore:
         """
-        Extracts numeric value from a string containing units
-        Args:
-            value_str: String containing numeric value with units
-        Returns:
-            Float value or None if extraction fails
+        Calculate health score based on nutritional values (1-10 scale).
+        A higher score indicates better nutritional value.
         """
         try:
-            # Extract numeric value from string (remove units)
-            return float(''.join(c for c in value_str if c.isdigit() or c == '.'))
-        except ValueError:
-            return None
+            score = 5.0  # Start at neutral score
+            
+            # Basic nutrient checks (up to +3 points)
+            if cls._has_good_protein(nutrition_info):
+                score += 1.0
+            if cls._has_good_fiber(nutrition_info):
+                score += 1.0
+            if cls._has_vitamins_minerals(nutrition_info):
+                score += 1.0
+            
+            # Penalty checks (up to -3 points)
+            if cls._has_high_sugar(nutrition_info):
+                score -= 1.5
+            if cls._has_high_sodium(nutrition_info):
+                score -= 1.5
+            
+            # Ensure score stays within 1-10 range
+            final_score = max(1, min(10, score))
+            feedback = cls._get_score_feedback(final_score)
+            
+            return HealthScore(
+                score=round(final_score, 1),
+                color=feedback['color'],
+                message=feedback['message']
+            )
+            
+        except Exception as e:
+            return HealthScore(**DEFAULT_SCORE)
 
     @classmethod
-    def calculate_health_score(cls, nutrition_info: Dict[str, str]) -> HealthScore:
-        """
-        Calculates health score based on nutrition information
-        Args:
-            nutrition_info: Dictionary containing nutrition values
-        Returns:
-            HealthScore object with score, message, and color
-        """
-        # Check if the food is valid first
-        if not nutrition_info.get('is_valid_food', True):  # Default to True if not present
-            return HealthScore(
-                score=0,
-                message="Invalid food item. Please enter a valid food.",
-                color="#e74c3c"  # Red
-            )
+    def _has_good_protein(cls, nutrition_info: Dict[str, Any]) -> bool:
+        """Check if protein content is good (>15% of daily value)"""
+        if 'protein' in nutrition_info:
+            protein = cls._extract_numeric_value(nutrition_info['protein'])
+            return protein > DAILY_VALUES['protein'] * 0.15
+        return False
 
-        total_score = 0
-        total_weight = 0
+    @classmethod
+    def _has_good_fiber(cls, nutrition_info: Dict[str, Any]) -> bool:
+        """Check if fiber content is good (>15% of daily value)"""
+        if 'fiber' in nutrition_info:
+            fiber = cls._extract_numeric_value(nutrition_info['fiber'])
+            return fiber > DAILY_VALUES['fiber'] * 0.15
+        return False
 
-        # Calculate score for each nutrient
-        for nutrient, range_info in cls.IDEAL_RANGES.items():
+    @classmethod
+    def _has_vitamins_minerals(cls, nutrition_info: Dict[str, Any]) -> bool:
+        """Check if food has significant vitamins/minerals (>15% in any)"""
+        for nutrient in MICRONUTRIENTS:
             if nutrient in nutrition_info:
-                value = cls._extract_numeric_value(nutrition_info[nutrient])
-                if value is not None:
-                    score = 0
-                    if value < range_info['min']:
-                        score = (value / range_info['min']) * 5
-                    elif value > range_info['max']:
-                        score = 5 * (range_info['max'] / value)
-                    else:
-                        score = 5 + ((value - range_info['min']) / 
-                                   (range_info['max'] - range_info['min'])) * 5
+                try:
+                    percentage = float(nutrition_info[nutrient].strip('%'))
+                    if percentage > 15:
+                        return True
+                except (ValueError, AttributeError):
+                    continue
+        return False
 
-                    total_score += score * abs(range_info['weight'])
-                    total_weight += abs(range_info['weight'])
+    @classmethod
+    def _has_high_sugar(cls, nutrition_info: Dict[str, Any]) -> bool:
+        """Check if sugar content is high (>30% of daily value)"""
+        if 'sugar' in nutrition_info:
+            sugar = cls._extract_numeric_value(nutrition_info['sugar'])
+            return sugar > DAILY_VALUES['sugar'] * 0.3
+        return False
 
-        # Calculate final score out of 10
-        if total_weight == 0:
-            final_score = 5  # Default middle score if no valid nutrients
-        else:
-            final_score = round((total_score / total_weight) * 2) / 2  # Round to nearest 0.5
-            final_score = max(1, min(10, final_score))  # Ensure score is between 1 and 10
-
-        return cls._get_health_score_details(final_score)
+    @classmethod
+    def _has_high_sodium(cls, nutrition_info: Dict[str, Any]) -> bool:
+        """Check if sodium content is high (>30% of daily value)"""
+        if 'sodium' in nutrition_info:
+            sodium = cls._extract_numeric_value(nutrition_info['sodium'])
+            return sodium > 2300 * 0.3  # 2300mg is typical daily limit
+        return False
 
     @staticmethod
-    def _get_health_score_details(score: float) -> HealthScore:
-        if score >= 8:
-            return HealthScore(
-                score=score,
-                message="Excellent choice! This food is highly nutritious.",
-                color="#2ecc71"  # Green
-            )
-        elif score >= 6:
-            return HealthScore(
-                score=score,
-                message="Good choice! This food has balanced nutrition.",
-                color="#f1c40f"  # Yellow
-            )
-        elif score >= 4:
-            return HealthScore(
-                score=score,
-                message="Moderate nutritional value. Consider balancing with other healthy foods.",
-                color="#e67e22"  # Orange
-            )
-        else:
-            return HealthScore(
-                score=score,
-                message="This food should be consumed in moderation as part of a balanced diet.",
-                color="#e74c3c"  # Red
-            ) 
+    def _extract_numeric_value(value_str: str) -> float:
+        """Extract numeric value from string with unit (e.g., "15g" -> 15)"""
+        return float(''.join(char for char in value_str if char.isdigit() or char == '.'))
+
+    @staticmethod
+    def _get_score_feedback(score: float) -> Dict[str, str]:
+        """Get color and message feedback based on score"""
+        for threshold, feedback in sorted(
+            SCORE_FEEDBACK.items(),
+            key=lambda x: x[0],
+            reverse=True
+        ):
+            if score >= threshold:
+                return feedback
+        return SCORE_FEEDBACK[0.0]  # Default to lowest threshold 
