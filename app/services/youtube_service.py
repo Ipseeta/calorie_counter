@@ -13,7 +13,7 @@ class YouTubeService:
         self.api_key = api_key
         self.logger = logging.getLogger(__name__)
 
-    def get_recipe_videos(self, food_item: str, max_results: int = 10) -> Optional[List[VideoInfo]]:
+    def get_recipe_videos(self, is_recipe: bool, food_item: str, max_results: int = 10) -> Optional[List[VideoInfo]]:
         """
         Fetches recipe videos for a given food item from YouTube
         Args:
@@ -29,14 +29,23 @@ class YouTubeService:
         try:
             youtube = build('youtube', 'v3', 
                           developerKey=self.api_key)
-            
-            search_response = youtube.search().list(
-                q=f"how to make {food_item} recipe",
-                part='id,snippet',
-                maxResults=max_results,
-                type='video',
-                regionCode='IN'
-            ).execute()
+            search_response = None
+            if is_recipe:
+                search_response = youtube.search().list(
+                    q=f"how to make {food_item} recipe",
+                    part='id,snippet',
+                    maxResults=max_results,
+                    type='video',
+                    regionCode='IN'
+                ).execute()
+            else:
+                search_response = youtube.search().list(
+                    q=f"suggest me a few recipes with {food_item}",
+                    part='id,snippet',
+                    maxResults=max_results,
+                    type='video',
+                    regionCode='IN'
+                ).execute()
 
             if not search_response.get('items'):
                 self.logger.warning(f"No videos found for {food_item}")

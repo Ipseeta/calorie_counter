@@ -85,9 +85,10 @@ def calculate_nutrition():
         
         # Get recipe URLs if needed
         recipe_urls = None
+        youtube_service = YouTubeService(api_key=Config.YOUTUBE_API_KEY)
+        video_info_list = None
         if nutrition_data.is_recipe:
-            youtube_service = YouTubeService(api_key=Config.YOUTUBE_API_KEY)
-            video_info_list = youtube_service.get_recipe_videos(food_item)
+            video_info_list = youtube_service.get_recipe_videos(True, food_item)
             if video_info_list:  # Check if videos were found
                 recipe_urls = [
                     {
@@ -97,7 +98,17 @@ def calculate_nutrition():
                     }
                     for video in video_info_list
                 ]
-        
+        else:
+            video_info_list = youtube_service.get_recipe_videos(False, food_item)
+            if video_info_list:
+                recipe_urls = [
+                    {
+                        "title": video.title,
+                        "url": video.url,
+                        "id": video.id
+                    }
+                    for video in video_info_list
+                ]   
         # Prepare the final response
         response_data = {
             "food_item": food_item,
@@ -180,9 +191,10 @@ def analyze_image():
             
         # Get recipe URLs if needed
         recipe_urls = None
+        youtube_service = YouTubeService(api_key=Config.YOUTUBE_API_KEY)
+        video_info_list = None
         if nutrition_data.is_recipe:
-            youtube_service = YouTubeService(api_key=Config.YOUTUBE_API_KEY)
-            video_info_list = youtube_service.get_recipe_videos(food_info.food_item)
+            video_info_list = youtube_service.get_recipe_videos(True, food_info.food_item)
             if video_info_list:
                 recipe_urls = [
                     {
@@ -192,7 +204,17 @@ def analyze_image():
                     }
                     for video in video_info_list
                 ]
-        
+        else:
+            video_info_list = youtube_service.get_recipe_videos(False, food_info.food_item)
+            if video_info_list:
+                recipe_urls = [
+                    {
+                        "title": video.title,
+                        "url": video.url,
+                        "id": video.id
+                    }
+                    for video in video_info_list
+                ]   
         # Prepare the final response
         response_data = {
             "food_item": food_info.food_item,

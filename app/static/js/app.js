@@ -171,7 +171,7 @@ function generateNutritionTableHTML(data) {
 }
 
 function generateRecipeVideosHTML(data) {
-    if (!data.is_recipe || !data.recipe_urls) return '';
+    if (!data.recipe_urls) return '';
     
     return `
         <div style="flex: 0 0 300px;">
@@ -309,7 +309,7 @@ async function submitForm() {
                         <p style="margin-top: 15px; font-style: italic; color: #666;">${data.insight || ''}</p>
                         ${data.is_valid_food && data.health_score ? generateHealthScoreHTML(data.health_score) : ''}
                         ${data.is_valid_food ? generateNutritionTableHTML(data) : ''}
-                        ${data.is_recipe && data.recipe_urls ? generateRecipeVideosHTML(data) : ''}
+                        ${data.recipe_urls ? generateRecipeVideosHTML(data) : ''}
                     </div>
                 </div>`;
         }
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p style="margin-top: 15px; font-style: italic; color: #666;">${data.insight || ''}</p>
                         ${data.is_valid_food && data.health_score ? generateHealthScoreHTML(data.health_score) : ''}
                         ${data.is_valid_food ? generateNutritionTableHTML(data) : ''}
-                        ${data.is_recipe && data.recipe_urls ? generateRecipeVideosHTML(data) : ''}
+                        ${data.recipe_urls ? generateRecipeVideosHTML(data) : ''}
                     </div>
                 </div>`;
             }
