@@ -105,21 +105,18 @@ class NutritionAnalyzer:
 
     @classmethod
     def _get_nutrient_value(cls, nutrition_info: Dict[str, Any], nutrient: str) -> float:
-        """Extract numeric value for a nutrient or return 0."""
-        if nutrient in nutrition_info:
-            try:
-                return cls._extract_numeric_value(nutrition_info[nutrient])
-            except ValueError:
-                current_app.logger.warning(f"Invalid numeric value for {nutrient}: {nutrition_info[nutrient]}")
-        return 0.0
-
-    @staticmethod
-    def _extract_numeric_value(value_str: str) -> float:
-        """Extract numeric value from string with unit (e.g., '15g' -> 15)."""
+        """Extract numeric value from nutrient string, handling nested objects."""
         try:
-            return float(''.join(char for char in value_str if char.isdigit() or char == '.'))
-        except ValueError:
-            current_app.logger.warning(f"Failed to parse numeric value from '{value_str}'")
+            value = nutrition_info.get(nutrient)
+            
+            # Handle nested objects (carbohydrates and fat)
+            if isinstance(value, dict):
+                value = value.get('total', '0g')
+            
+            # Convert string to float, removing unit
+            return float(''.join(filter(str.isdigit, str(value))) or 0)
+        except (ValueError, TypeError, AttributeError):
+            current_app.logger.warning(f"Failed to parse numeric value from '{value}'")
             return 0.0
 
     @staticmethod

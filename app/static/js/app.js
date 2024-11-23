@@ -72,6 +72,10 @@ function formatNutrientName(nutrient) {
     const formatMap = {
         'vitamin_a': 'Vit A',
         'vitamin_c': 'Vit C',
+        'vitamin_d': 'Vit D',
+        'calcium': 'Calcium',
+        'iron': 'Iron',
+        'potassium': 'Potassium'
         // Add any other formatting rules here
     };
     
@@ -153,19 +157,70 @@ function generateNutritionTableHTML(data) {
                     <th style="padding: 15px; text-align: right;">Amount</th>
                 </tr>
             </thead>
-            <tbody>
-            ${Object.entries(data.nutrition_info)
-                .filter(([nutrient]) => !['insight', 'is_recipe', 'is_valid_food', 'recipe_urls'].includes(nutrient))
-                .map(([nutrient, value], index) => `
-                    <tr style="
-                        background-color: ${index % 2 === 0 ? '#f8f9fa' : 'white'};
-                        border-bottom: 1px solid #ddd;
-                    ">
-                        <td style="padding: 12px 15px; text-align: left;">${formatNutrientName(nutrient)}</td>
-                        <td style="padding: 12px 15px; text-align: right;">${value}</td>
+           <tbody>
+    ${Object.entries(data.nutrition_info)
+        .filter(([nutrient]) => !['insight', 'is_recipe', 'is_valid_food', 'recipe_urls'].includes(nutrient))
+        .map(([nutrient, value], index) => {
+            if (typeof value === 'object') {
+                const bgColor = index % 2 === 0 ? '#f8f9fa' : 'white';
+                // Get total row first
+                const mainRow = `
+                    <tr style="background-color: ${bgColor}; border-bottom: 1px solid #ddd;">
+                        <td style="padding: 12px 15px; text-align: left;">
+                            ${formatNutrientName(nutrient)}
+                        </td>
+                        <td style="padding: 12px 15px; text-align: right;">
+                            ${value.total}
+                        </td>
+                    </tr>`;
+
+                // Get sub-rows (excluding total)
+                const subRows = Object.entries(value)
+                    .filter(([key]) => key !== 'total')
+                    .map(([subKey, subVal]) => {
+                        const info = getNutrientInfo(subKey);
+                        return `
+                            <tr style="background-color: ${bgColor}; border-bottom: 1px solid #ddd;">
+                                <td style="padding: 12px 15px; text-align: left; padding-left: 35px; color: #666;">
+                                    ${subKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                    ${info ? `
+                                        <span style="
+                                            display: inline-block;
+                                            width: 16px;
+                                            height: 16px;
+                                            background: #f0f0f0;
+                                            border-radius: 50%;
+                                            text-align: center;
+                                            line-height: 16px;
+                                            font-size: 12px;
+                                            margin-left: 5px;
+                                            cursor: help;
+                                            color: #666;
+                                        " title="${info}">i</span>
+                                    ` : ''}
+                                </td>
+                                <td style="padding: 12px 15px; text-align: right; color: #666;">
+                                    ${subVal}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                return mainRow + subRows;
+            } else {
+                return `
+                    <tr style="background-color: ${index % 2 === 0 ? '#f8f9fa' : 'white'}; border-bottom: 1px solid #ddd;">
+                        <td style="padding: 12px 15px; text-align: left;">
+                            ${formatNutrientName(nutrient)}
+                        </td>
+                        <td style="padding: 12px 15px; text-align: right;">
+                            ${value}
+                        </td>
                     </tr>
-                `).join('')}
-            </tbody>
+                `;
+            }
+        }).join('')}
+</tbody>
         </table>
     `;
 }
@@ -500,4 +555,18 @@ document.addEventListener('DOMContentLoaded', function() {
 // Fetch food suggestions when page loads
     fetchFoodSuggestions();
 });
+
+// Add this function to get nutrient information
+function getNutrientInfo(nutrient) {
+    const nutrientInfo = {
+        monounsaturated: "Helps reduce bad cholesterol levels and supports heart health",
+        polyunsaturated: "Essential fats that support brain function and cell growth",
+        saturated: "Should be limited as part of a healthy diet",
+        trans: "Artificial fats that should be avoided",
+        dietary_fiber: "Aids digestion and helps maintain healthy blood sugar levels",
+        added_sugar: "Should be limited as part of a healthy diet",
+        // Add more nutrients as needed
+    };
+    return nutrientInfo[nutrient] || "";
+}
 
