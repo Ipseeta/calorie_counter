@@ -163,24 +163,33 @@ function generateNutritionTableHTML(data) {
         .map(([nutrient, value], index) => {
             if (typeof value === 'object') {
                 const bgColor = index % 2 === 0 ? '#f8f9fa' : 'white';
-                // Get total row first
+                const isExpandable = ['carbohydrates', 'fat'].includes(nutrient);
+                
+                // Get main row with dropdown arrow for expandable nutrients
                 const mainRow = `
                     <tr style="background-color: ${bgColor}; border-bottom: 1px solid #ddd;">
-                        <td style="padding: 12px 15px; text-align: left;">
+                        <td style="padding: 12px 15px; text-align: left; cursor: ${isExpandable ? 'pointer' : 'default'}" 
+                            onclick="${isExpandable ? `toggleSubRows('${nutrient}-subrows')` : ''}"
+                            class="nutrient-row">
                             ${formatNutrientName(nutrient)}
+                            ${isExpandable ? '<span style="float: right;">▼</span>' : ''}
                         </td>
                         <td style="padding: 12px 15px; text-align: right;">
                             ${value.total}
                         </td>
                     </tr>`;
 
-                // Get sub-rows (excluding total)
+                // Get sub-rows (excluding total) with initial hidden state
                 const subRows = Object.entries(value)
                     .filter(([key]) => key !== 'total')
                     .map(([subKey, subVal]) => {
                         const info = getNutrientInfo(subKey);
                         return `
-                            <tr style="background-color: ${bgColor}; border-bottom: 1px solid #ddd;">
+                            <tr id="${nutrient}-subrows" style="
+                                background-color: ${bgColor}; 
+                                border-bottom: 1px solid #ddd;
+                                display: none;
+                            ">
                                 <td style="padding: 12px 15px; text-align: left; padding-left: 35px; color: #666;">
                                     ${subKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                                     ${info ? `
@@ -223,6 +232,22 @@ function generateNutritionTableHTML(data) {
 </tbody>
         </table>
     `;
+}
+
+// Add this new function to handle the toggle functionality
+function toggleSubRows(id) {
+    const subRows = document.querySelectorAll(`#${id}`);
+    const arrow = event.currentTarget.querySelector('span');
+    
+    subRows.forEach(row => {
+        if (row.style.display === 'none') {
+            row.style.display = 'table-row';
+            if (arrow) arrow.innerHTML = '▲';
+        } else {
+            row.style.display = 'none';
+            if (arrow) arrow.innerHTML = '▼';
+        }
+    });
 }
 
 function generateRecipeVideosHTML(data) {
