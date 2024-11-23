@@ -203,9 +203,24 @@ function generateNutritionTableHTML(data) {
                                             line-height: 16px;
                                             font-size: 12px;
                                             margin-left: 5px;
-                                            cursor: help;
+                                            cursor: pointer;
                                             color: #666;
-                                        " title="${info}">i</span>
+                                            position: relative;
+                                        " onclick="event.stopPropagation(); showTooltip(event)">
+                                            i
+                                            <div class="nutrient-tooltip" style="
+                                                display: none;
+                                                position: fixed;
+                                                background: rgba(0, 0, 0, 0.8);
+                                                color: white;
+                                                padding: 8px 12px;
+                                                border-radius: 4px;
+                                                font-size: 12px;
+                                                max-width: 200px;
+                                                z-index: 1000;
+                                                text-align: center;
+                                            ">${info}</div>
+                                        </span>
                                     ` : ''}
                                 </td>
                                 <td style="padding: 12px 15px; text-align: right; color: #666;">
@@ -594,4 +609,48 @@ function getNutrientInfo(nutrient) {
     };
     return nutrientInfo[nutrient] || "";
 }
+
+// Add this new function to handle tooltip positioning and display
+function showTooltip(event) {
+    // Hide all other tooltips first
+    document.querySelectorAll('.nutrient-tooltip').forEach(tooltip => {
+        tooltip.style.display = 'none';
+    });
+
+    const tooltip = event.currentTarget.querySelector('.nutrient-tooltip');
+    const currentDisplay = tooltip.style.display;
+    
+    if (currentDisplay === 'none') {
+        const rect = event.currentTarget.getBoundingClientRect();
+        tooltip.style.display = 'block';
+        
+        // Position tooltip above the icon
+        tooltip.style.left = rect.left + 'px';
+        tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+        
+        // Ensure tooltip stays within viewport
+        const tooltipRect = tooltip.getBoundingClientRect();
+        if (tooltipRect.left < 0) {
+            tooltip.style.left = '5px';
+        }
+        if (tooltipRect.right > window.innerWidth) {
+            tooltip.style.left = (window.innerWidth - tooltipRect.width - 5) + 'px';
+        }
+        if (tooltipRect.top < 0) {
+            // If not enough space above, show below
+            tooltip.style.top = (rect.bottom + 10) + 'px';
+        }
+    } else {
+        tooltip.style.display = 'none';
+    }
+}
+
+// Close tooltips when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.nutrient-tooltip') && !event.target.closest('span[onclick]')) {
+        document.querySelectorAll('.nutrient-tooltip').forEach(tooltip => {
+            tooltip.style.display = 'none';
+        });
+    }
+});
 
