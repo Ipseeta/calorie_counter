@@ -1,5 +1,6 @@
 VALID_UNITS = {
     "units",
+    "plate",
     "grams",
     "ml",
     "bowl",

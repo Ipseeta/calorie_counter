@@ -57,7 +57,7 @@ function validateInput(foodItem, quantity, unit) {
         errors.push("Please enter a valid quantity");
     }
     
-    const validUnits = ["units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"];
+    const validUnits = ["units", "grams", "ml", "bowl", "cup", "tbsp", "tsp", "plate"];
     if (!unit || unit === "") {
         errors.push("Please select a unit of measurement");
     } else if (!validUnits.includes(unit)) {
@@ -327,7 +327,7 @@ function generateErrorHTML(error) {
             background-color: rgba(255,0,0,0.1);
         ">
             <p style="margin: 0;">An error occurred while processing your request.</p>
-            <p style="margin: 5px 0 0; font-size: 0.9em; opacity: 0.8;">${error.message}</p>
+            <p style="margin: 5px 0 0; font-size: 0.9em; opacity: 0.8;">${error}</p>
         </div>
     `;
 }
@@ -542,7 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
 
-            if (data.error) {
+            if (data.error) {  // Check for error using success flag
                 result.innerHTML = `
                 <div style="
                     color: red;
@@ -552,8 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     margin-top: 10px;
                     background-color: rgba(255,0,0,0.1);
                 ">
-                    <p style="margin: 0;">${data.error}</p>
-                    ${data.error_type ? `<p style="margin: 5px 0 0; font-size: 0.9em; opacity: 0.8;">Error type: ${data.error_type}</p>` : ''}
+                    <p style="margin: 0;">${data.error.message}</p>
                 </div>
             `;
             } else {

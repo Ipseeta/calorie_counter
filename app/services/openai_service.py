@@ -3,8 +3,8 @@ from app.models.nutrition_models import NutritionScores, FoodSuggestions, FoodIt
 from app.exceptions.api_exceptions import APIException
 from http import HTTPStatus
 import base64
-from flask import current_app
-
+from flask import current_app, json
+from json.decoder import JSONDecodeError
 class OpenAIService:
     """
     Service class for interacting with OpenAI API
@@ -84,48 +84,94 @@ class OpenAIService:
         """
         Gets the food item from an image using OpenAI
         """
-        # Read the image data
-        image_data = image_file.read()
-        
-        user_prompt = (
-            {
-                "type": "text", 
-                "text": """You are a food image analyzer:
-                        If this image contains food, provide:
-                            1. The exact name of the food item
-                            2. The approximate quantity in a suitable unit ("units", "grams", "ml", "bowl", "cup", "tbsp", "tsp")
-                            3. If this is NOT a food image (e.g., selfie, landscape, random image, etc.), respond with:
-                            {"error": "This image does not contain food. Please upload a food image."}
-                            IMPORTANT: Respond **only** with valid JSON in this exact format without any extra text:
-                            {"food_item": <string>, "quantity": <number>, "unit": <string>}
-                            The quantity should be a number and the unit should be one of the following: "units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"
-                            Format your response exactly like this example:
-                            food_item: Apple
-                            quantity: 1
-                            unit: pieces"""
-            },
-            {
-                "type": "image_url", 
-                "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(image_data).decode()}"}
-            }
-        )
         try:
-            response = self.client.beta.chat.completions.parse(
+            image_data = image_file.read()
+            
+            # First get raw analysis from vision model
+            only_vision_response = self.client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "user", "content": user_prompt}
+                    {
+                        "role": "system",
+                        "content": """You are a precise food image analyzer with strict rules:
+                            1. Your primary task is to first determine if an image contains food or not
+                            2. You must NEVER classify non-food items as food
+                            3. If you see any humans, faces, or selfies, immediately return an error
+                            4. If you see landscapes, objects, or any non-food items, return an error
+                            5. Only proceed with food analysis if you are 100% certain the image contains food"""
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": """Analyze this image and return ONLY a JSON response in this exact format:
+                                    For non-food images:
+                                    {"error": "This image does not contain food. Please upload a food image only."}
+                                    
+                                    For images with people:
+                                    {"error": "This appears to be an image containing people. Please upload a food image only."}
+
+                                    For images with landscapes:
+                                    {"error": "This appears to be an image containing landscapes. Please upload a food image only."}
+                                    
+                                    For food images:
+                                    {"food_item": "name of food", "quantity": number, "unit": "units/grams/ml/bowl/cup/tbsp/tsp/plate"}
+                                    
+                                    DO NOT include any additional text or explanation."""
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64.b64encode(image_data).decode()}"
+                                }
+                            }
+                        ]
+                    }
                 ],
-                response_format=FoodItem,
-                temperature=0.3
+                response_format={ "type": "json_object" }
             )
-            return response.choices[0].message.parsed
+            try:
+                vision_result = json.loads(only_vision_response.choices[0].message.content)
+            except JSONDecodeError as e:
+                current_app.logger.error(f"Failed to parse vision API response: {only_vision_response.choices[0].message.content}")
+                raise APIException.parse_error()
+            # If there's an error, return it directly
+            if "error" in vision_result:
+                raise APIException.invalid_image(vision_result["error"])
+            
+            # Format the result using GPT-4 to ensure it matches FoodItem schema
+            format_response = self.client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """Format the provided food analysis into valid JSON with these exact fields:
+                            - food_item (string)
+                            - quantity (number)
+                            - unit (string: one of "units", "grams", "ml", "bowl", "cup", "tbsp", "tsp", "plate")"""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Format this into the required schema: {json.dumps(vision_result)}"
+                    }
+                ],
+                response_format={ "type": "json_object" }
+            )
+            try:    
+                formatted_result = json.loads(format_response.choices[0].message.content)
+            except JSONDecodeError as e:
+                current_app.logger.error(f"Failed to parse format API response for FoodItem: {format_response.choices[0].message.content}")
+                raise APIException.parse_error()
+            return FoodItem(**formatted_result)
 
         except Exception as e:
+            current_app.logger.error(f"Error in get_food_item_from_image: {e}")
             raise APIException(
-                message=e.message,
+                message=e,
                 status_code=HTTPStatus.SERVICE_UNAVAILABLE,
                 error_type="openai_api_error"
-            ) 
+            )
         
     def validate_food_item(self, food_item: str):
         """

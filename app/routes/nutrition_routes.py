@@ -36,7 +36,7 @@ def validate_input(food_item: Optional[str], quantity: Any, unit: Optional[str])
     if not unit:
         raise APIException("Please select a unit of measurement", HTTPStatus.BAD_REQUEST, "validation_error")
     
-    valid_units = {"units", "grams", "ml", "bowl", "cup", "tbsp", "tsp"}
+    valid_units = {"units", "grams", "ml", "bowl", "cup", "tbsp", "tsp", 'plate'}
     if unit not in valid_units:
         raise APIException("Invalid unit of measurement", HTTPStatus.BAD_REQUEST, "validation_error")
 
@@ -140,42 +140,32 @@ def calculate_nutrition():
 
 @nutrition_bp.route('/analyze_image', methods=['POST'])
 def analyze_image():
+    """
+    Endpoint to analyze an image and return nutrition information
+    Returns:
+        JSON response containing nutrition data, health score, and recipe videos if applicable
+    """
     try:
         if 'image' not in request.files:
-            raise APIException(
-                message='No image file uploaded',
-                status_code=400,
-                error_type='MISSING_IMAGE'
-            )
+            raise APIException.missing_image()
         
         file = request.files['image']
         if file.filename == '':
-            raise APIException(
-                message='No selected image file',
-                status_code=400,
-                error_type='EMPTY_IMAGE'
-            )
+            raise APIException.empty_image()
         
         # Validate file type
         if not file.content_type.startswith('image/'):
-            raise APIException(
-                message='Uploaded file is not an image',
-                status_code=415,
-                error_type='INVALID_FILE_TYPE'
-            )
+            raise APIException.invalid_file_type(file.content_type)
             
         # Validate image can be opened
         try:
             Image.open(file)
             file.seek(0)  # Reset file pointer after checking
         except UnidentifiedImageError:
-            raise APIException(
-                message='Invalid image file format',
-                status_code=400,
-                error_type='INVALID_IMAGE_FORMAT'
-            )
-            
+            raise APIException.invalid_image_format()
+        
         # Analyze image with OpenAI using the image data
+        # Get food item from image
         food_info = openai_service.get_food_item_from_image(file)
         # Validate input
         validate_input(food_info.food_item, food_info.quantity, food_info.unit)
@@ -240,13 +230,17 @@ def analyze_image():
             status_code=400,
             error_type='VALIDATION_ERROR'
         )
-    except Exception as e:
-        # Log unexpected errors for debugging
-        current_app.logger.error(f"Unexpected error in analyze_image: {str(e)}")
-        raise APIException(
-            message=e.message,
-            status_code=500,
-            error_type="INTERNAL_SERVER_ERROR"
-        )
+    except APIException as ae:
+        current_app.logger.error(f"API Exception in analyze_image: {ae}")
+        return jsonify(ae.to_dict()), ae.status_code
 
+    except Exception as e:
+        current_app.logger.error(f"Unexpected error in analyze_image: {str(e)}")
+        error = APIException(
+            message="An unexpected error occurred",
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            error_type="INTERNAL_ERROR",
+            details={"original_error": str(e)}
+        )
+        return jsonify(error.to_dict()), error.status_code
 
