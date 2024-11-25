@@ -428,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const analyzeImageBtn = document.getElementById('analyzeImageBtn');
 
     // Open modal on image button click
-    imageSearchBtn.addEventListener('click', function(e) {
+    imageSearchBtn.addEventListener('click touchend', function(e) {
         e.preventDefault();
         e.stopPropagation();
         imageModal.style.display = 'block';
