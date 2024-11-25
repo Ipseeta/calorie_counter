@@ -428,7 +428,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const analyzeImageBtn = document.getElementById('analyzeImageBtn');
 
     // Open modal on image button click
-    imageSearchBtn.addEventListener('click touchend', function(e) {
+    imageSearchBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        imageModal.style.display = 'block';
+        // Prevent body scrolling when modal is open
+        document.body.style.overflow = 'hidden';
+    });
+
+    imageSearchBtn.addEventListener('touchend', function(e) {
         e.preventDefault();
         e.stopPropagation();
         imageModal.style.display = 'block';
