@@ -54,7 +54,7 @@ class APIException(Exception):
             message += f" (received: {content_type})"
         return cls(
             message=message,
-            status_code=HTTPStatus.UNSUPPORTED_MEDIA_TYPE,  # 415
+            status_code=HTTPStatus.BAD_REQUEST,
             error_type="INVALID_FILE_TYPE"
         )
 
