@@ -85,6 +85,44 @@ Score interpretation:
 - 4-5.9: Fair 🟠
 - 1-3.9: Limited 🔴
 
+## 🤝 Testing
+
+### Running Tests
+```bash
+# Run all tests
+pytest
+
+# Run specific test file
+pytest pytest tests/test_nutrition_routes.py -v
+
+# Run with verbose output
+pytest -v
+
+# Run specific test case
+pytest tests/test_nutrition_routes.py::TestNutritionRoutes::test_analyze_real_chicken_breast -v
+```
+
+### Test Structure
+```
+tests/
+├── __init__.py              # Test configurations and shared data
+├── conftest.py             # Test fixtures
+├── test_nutrition_routes.py # API endpoint tests
+└── test_data/              # Test images and mock data
+    └── images/
+        ├── valid_food.jpg
+        ├── chicken_breast.jpg
+        └── invalid_format.txt
+```
+
+### Key Test Cases
+- Food suggestion validation
+- Nutrition calculation with various inputs
+- Image analysis with real food images
+- Error handling and validation
+- API response structure verification
+
+
 ## 🤝 Contributing
 
 1. Fork
