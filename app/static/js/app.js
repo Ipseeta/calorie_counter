@@ -602,7 +602,7 @@ function getNutrientInfo(nutrient) {
         polyunsaturated: "Essential fats that support brain function and cell growth",
         saturated: "Should be limited as part of a healthy diet",
         trans: "Artificial fats that should be avoided",
-        dietary_fiber: "Aids digestion and helps maintain healthy blood sugar levels",
+        fiber: "Aids digestion and helps maintain healthy blood sugar levels",
         added_sugar: "Should be limited as part of a healthy diet",
         // Add more nutrients as needed
     };

@@ -10,7 +10,6 @@ class FatDetails(BaseModel):
 
 class CarbohydrateDetails(BaseModel):
     total: Optional[str]
-    dietary_fiber: Optional[str]
     sugar: Optional[str]
     added_sugar: Optional[str]
 

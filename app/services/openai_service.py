@@ -53,7 +53,7 @@ class OpenAIService:
             "IMPORTANT: Respond **only** with valid JSON in this exact format without any extra text: "
             '{"calories": <string>, "protein": <string>, '
             '"fat": {"total": <string>, "saturated": <string>, "trans": <string>, "polyunsaturated": <string>, "monounsaturated": <string>}, '
-            '"carbohydrates": {"total": <string>, "dietary_fiber": <string>, "sugar": <string>, "added_sugar": <string>}, '
+            '"carbohydrates": {"total": <string>, "sugar": <string>, "added_sugar": <string>}, '
             '"fiber": <string>, "sugar": <string>, "sodium": <string>, '
             '"vitamin_a": <string>, "vitamin_c": <string>, "vitamin_d": <string>, '
             '"calcium": <string>, "iron": <string>, "potassium": <string>, '
