@@ -11,7 +11,7 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 TEST_IMAGES_DIR = os.path.join(TEST_DATA_DIR, 'images')
 
 class TestNutritionRoutes:
-    """Test cases for nutrition-related routes"""
+    """Test cases for nutrition related routes"""
 
     @patch('app.services.openai_service.OpenAIService.get_food_suggestions')
     def test_get_food_suggestions(self, mock_suggestions, client):
