@@ -28,7 +28,7 @@ NUTRIENT_WEIGHTS: Dict[str, float] = {
 HEALTHY_RANGES: Dict[str, Tuple[float, float]] = {
     'calories': (100.0, 300.0),    # 100-300kcal per serving is good
     'protein': (5.0, 20.0),        # 5-20g per serving is healthy
-    'fat': (3.0, 15.0),            # 3-15g per serving is reasonable
+    'fat': (3.0, 15.0),            # 3-15g per serving is reasonable 
     'carbohydrates': (10.0, 30.0), # 10-30g per serving is balanced
     'fiber': (2.0, 8.0),           # 2-8g per serving is good
     'sugar': (0.0, 5.0),           # 0-5g per serving is acceptable
