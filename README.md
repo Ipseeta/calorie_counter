@@ -1,4 +1,4 @@
-# 🥗 Calorie Counter App
+# 🥗 Calorie Counter App 
 
 A smart Flask application that analyzes nutritional content, provides health scores, and suggests recipe videos for food items, with a special focus on Indian cuisine.
 
