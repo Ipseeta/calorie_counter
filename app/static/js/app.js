@@ -428,6 +428,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewImage = document.getElementById('previewImage');
     const analyzeImageBtn = document.getElementById('analyzeImageBtn');
 
+    // Track which input was used
+    let activeInput = null;
+
     // Open modal
     function openModal() {
         imageModal.style.display = 'block';
@@ -438,7 +441,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeModal() {
         imageModal.style.display = 'none';
         document.body.style.overflow = '';
-        resetUpload();
+        // Don't reset if we have an image and are about to analyze
+        if (!selectedImageFile) {
+            resetUpload();
+        }
     }
 
     // Open modal on image button click
@@ -449,12 +455,20 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Close modal handlers
-    closeBtn.addEventListener('click', closeModal);
+    closeBtn.addEventListener('click', function() {
+        selectedImageFile = null;
+        resetUpload();
+        imageModal.style.display = 'none';
+        document.body.style.overflow = '';
+    });
 
     // Close on outside click
     imageModal.addEventListener('click', function(e) {
         if (e.target === imageModal) {
-            closeModal();
+            selectedImageFile = null;
+            resetUpload();
+            imageModal.style.display = 'none';
+            document.body.style.overflow = '';
         }
     });
 
@@ -466,28 +480,40 @@ document.addEventListener('DOMContentLoaded', function() {
     // Close on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && imageModal.style.display === 'block') {
-            closeModal();
+            selectedImageFile = null;
+            resetUpload();
+            imageModal.style.display = 'none';
+            document.body.style.overflow = '';
         }
     });
 
     // Camera button - opens camera on mobile
     cameraBtn.addEventListener('click', function(e) {
         e.preventDefault();
+        activeInput = cameraInput;
         cameraInput.click();
     });
 
     // Gallery button - opens file picker
     galleryBtn.addEventListener('click', function(e) {
         e.preventDefault();
+        activeInput = galleryInput;
         galleryInput.click();
     });
 
-    // Handle file selection
-    function handleFiles(files) {
-        if (files.length === 0) return;
+    // Handle file selection from input element
+    function handleFileInput(inputElement) {
+        const files = inputElement.files;
+        if (!files || files.length === 0) {
+            console.log('No files selected');
+            return;
+        }
 
         const file = files[0];
-        if (!file.type.startsWith('image/')) {
+        console.log('File selected:', file.name, file.type, file.size);
+
+        // More lenient type check for camera captures
+        if (!file.type.startsWith('image/') && !file.type === '') {
             alert('Please select an image file');
             return;
         }
@@ -498,7 +524,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Store the file globally
         selectedImageFile = file;
+        console.log('selectedImageFile set:', selectedImageFile);
 
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -506,23 +534,30 @@ document.addEventListener('DOMContentLoaded', function() {
             dropZone.classList.add('has-image');
             analyzeImageBtn.disabled = false;
         };
+        reader.onerror = function(e) {
+            console.error('FileReader error:', e);
+            alert('Error reading the image file');
+        };
         reader.readAsDataURL(file);
     }
 
     // Camera input change handler
     cameraInput.addEventListener('change', function(e) {
-        handleFiles(this.files);
+        console.log('Camera input changed');
+        handleFileInput(this);
     });
 
     // Gallery input change handler
     galleryInput.addEventListener('change', function(e) {
-        handleFiles(this.files);
+        console.log('Gallery input changed');
+        handleFileInput(this);
     });
 
     // Drop zone click handler - opens gallery
     dropZone.addEventListener('click', function(e) {
         e.preventDefault();
         if (!dropZone.classList.contains('has-image')) {
+            activeInput = galleryInput;
             galleryInput.click();
         }
     });
@@ -541,26 +576,56 @@ document.addEventListener('DOMContentLoaded', function() {
     dropZone.addEventListener('drop', function(e) {
         e.preventDefault();
         dropZone.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (!file.type.startsWith('image/')) {
+                alert('Please drop an image file');
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Please drop an image smaller than 10MB');
+                return;
+            }
+            selectedImageFile = file;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                previewImage.src = evt.target.result;
+                dropZone.classList.add('has-image');
+                analyzeImageBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
     });
 
     // Analyze image button click handler
     analyzeImageBtn.addEventListener('click', async function() {
-        if (!selectedImageFile) return;
+        console.log('Analyze button clicked, selectedImageFile:', selectedImageFile);
+
+        if (!selectedImageFile) {
+            alert('No image selected. Please take a photo or choose from gallery.');
+            return;
+        }
 
         const loader = document.getElementById('loader');
         const result = document.getElementById('result');
         const resultsContainer = document.getElementById('results-container');
 
+        // Store the file before closing modal (which might reset it)
+        const fileToUpload = selectedImageFile;
+
         // Show loader and close modal
         loader.style.display = 'flex';
-        closeModal();
+        imageModal.style.display = 'none';
+        document.body.style.overflow = '';
         resultsContainer.style.display = 'none';
         result.innerHTML = '';
 
         try {
             const formData = new FormData();
-            formData.append('image', selectedImageFile);
+            formData.append('image', fileToUpload, fileToUpload.name || 'photo.jpg');
+
+            console.log('Sending image:', fileToUpload.name, fileToUpload.size, fileToUpload.type);
 
             const response = await fetch('/analyze_image', {
                 method: 'POST',
@@ -568,6 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             const data = await response.json();
+            console.log('Response:', data);
 
             if (data.error) {
                 result.innerHTML = `
@@ -592,16 +658,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>`;
             }
         } catch (error) {
+            console.error('Upload error:', error);
             result.innerHTML = generateErrorHTML(error);
         } finally {
             loader.style.display = 'none';
             resultsContainer.style.display = 'block';
+            // Reset after upload completes
+            resetUpload();
         }
     });
 
     // Reset upload state
     function resetUpload() {
         selectedImageFile = null;
+        activeInput = null;
         cameraInput.value = '';
         galleryInput.value = '';
         previewImage.src = '';
