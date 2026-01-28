@@ -79,53 +79,64 @@ function formatNutrientName(nutrient) {
            nutrient.slice(1).replace(/_/g, ' ');
 }
 
+// Get emoji based on health score
+function getScoreEmoji(score) {
+    if (score >= 8) return "🌟";
+    if (score >= 6) return "👍";
+    if (score >= 4) return "😐";
+    return "⚠️";
+}
+
 // Generates HTML for health score display
 function generateHealthScoreHTML(healthScore) {
+    const emoji = getScoreEmoji(healthScore.score);
+    const circumference = 2 * Math.PI * 45; // radius = 45
+    const offset = circumference - (healthScore.score / 10) * circumference;
+
     return `
         <div class="health-score-card" style="
-            background: var(--card, white);
-            padding: 20px;
-            border-radius: 12px;
+            background: linear-gradient(135deg, var(--card, white) 0%, var(--bg, #f8fafc) 100%);
+            padding: 24px;
+            border-radius: 16px;
             margin: 20px 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
         ">
-            <h3 style="margin: 0 0 16px 0; color: var(--text, #1e293b); font-size: 1rem; font-weight: 600;">Health Score</h3>
-            <div style="
-                background: var(--bg, #f1f5f9);
-                height: 12px;
-                border-radius: 6px;
-                position: relative;
-                overflow: hidden;
-            ">
+            <h3 style="margin: 0 0 20px 0; color: var(--text, #1e293b); font-size: 1rem; font-weight: 600;">Health Score</h3>
+
+            <div style="position: relative; width: 120px; height: 120px; margin: 0 auto 16px;">
+                <svg width="120" height="120" style="transform: rotate(-90deg);">
+                    <circle cx="60" cy="60" r="45" fill="none" stroke="var(--border, #e2e8f0)" stroke-width="10"/>
+                    <circle cx="60" cy="60" r="45" fill="none" stroke="${healthScore.color}" stroke-width="10"
+                        stroke-linecap="round"
+                        stroke-dasharray="${circumference}"
+                        stroke-dashoffset="${offset}"
+                        style="transition: stroke-dashoffset 1s ease-out;"/>
+                </svg>
                 <div style="
-                    width: ${healthScore.score * 10}%;
-                    height: 100%;
-                    background: ${healthScore.color};
-                    border-radius: 6px;
-                    transition: width 0.5s ease-in-out;
-                "></div>
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    text-align: center;
+                ">
+                    <span style="font-size: 28px;">${emoji}</span>
+                    <div style="
+                        font-size: 1.5rem;
+                        font-weight: 700;
+                        color: ${healthScore.color};
+                        line-height: 1;
+                    ">${healthScore.score}</div>
+                </div>
             </div>
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 8px;
-                font-size: 0.875rem;
-            ">
-                <span style="color: var(--text-muted, #64748b);">1</span>
-                <span style="
-                    color: ${healthScore.color};
-                    font-weight: 700;
-                    font-size: 1.25rem;
-                ">${healthScore.score}/10</span>
-                <span style="color: var(--text-muted, #64748b);">10</span>
-            </div>
+
             <p style="
-                margin: 12px 0 0 0;
+                margin: 0;
                 color: var(--text-muted, #64748b);
-                font-size: 0.875rem;
-                text-align: center;
+                font-size: 0.9rem;
                 line-height: 1.5;
+                max-width: 280px;
+                margin: 0 auto;
             ">
                 ${healthScore.message}
             </p>
@@ -136,11 +147,22 @@ function generateHealthScoreHTML(healthScore) {
 function generateNutritionTableHTML(data) {
     return `
         <div style="margin-top: 20px;">
-            <p style="
-                font-size: 0.9rem;
-                color: var(--text-muted, #64748b);
-                margin: 0 0 12px 0;
-            ">Nutrition for <strong style="color: var(--text, #1e293b);">${data.quantity} ${data.unit}</strong> of <strong style="color: var(--text, #1e293b);">${data.food_item}</strong></p>
+            <div style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 16px;
+                padding: 12px 16px;
+                background: var(--primary-light, #dcfce7);
+                border-radius: 10px;
+            ">
+                <span style="font-size: 1.25rem;">🍽️</span>
+                <p style="
+                    font-size: 0.9rem;
+                    color: var(--text, #1e293b);
+                    margin: 0;
+                "><strong>${data.quantity} ${data.unit}</strong> of <strong>${data.food_item}</strong></p>
+            </div>
             <table class="nutrition-table">
                 <thead>
                     <tr>
@@ -308,6 +330,9 @@ function generateRecipeVideosHTML(data) {
 function generateErrorHTML(error) {
     return `
         <div style="
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
             color: #dc2626;
             padding: 16px;
             border: 1px solid #fecaca;
@@ -315,8 +340,11 @@ function generateErrorHTML(error) {
             margin-top: 16px;
             background-color: #fef2f2;
         ">
-            <p style="margin: 0; font-weight: 500;">Something went wrong</p>
-            <p style="margin: 8px 0 0; font-size: 0.875rem; opacity: 0.8;">${error}</p>
+            <span style="font-size: 1.5rem; line-height: 1;">😕</span>
+            <div>
+                <p style="margin: 0; font-weight: 600;">Oops! Something went wrong</p>
+                <p style="margin: 6px 0 0; font-size: 0.875rem; opacity: 0.8;">${error}</p>
+            </div>
         </div>
     `;
 }
@@ -409,6 +437,10 @@ async function submitForm() {
     } finally {
         loader.style.display = 'none';
         resultsContainer.style.display = 'block';
+        // Smooth scroll to results
+        setTimeout(() => {
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     }
 }
 
@@ -663,6 +695,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             loader.style.display = 'none';
             resultsContainer.style.display = 'block';
+            // Smooth scroll to results
+            setTimeout(() => {
+                resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
             // Reset after upload completes
             resetUpload();
         }
