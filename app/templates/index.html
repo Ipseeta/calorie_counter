@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#4CAF50">
+    <meta name="theme-color" content="#22c55e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -20,84 +21,136 @@
     <div class="container">
         <div class="header">
             <div class="logo-title">
-                <img src="{{ url_for('static', filename='favicon/favicon-32x32.png') }}" 
-                     alt="Calorie Counter Logo" 
+                <img src="{{ url_for('static', filename='favicon/favicon-32x32.png') }}"
+                     alt="Calorie Counter Logo"
                      class="logo"
                      width="32"
                      height="32">
                 <h1>Calorie Counter</h1>
             </div>
+            <p class="tagline">AI-powered nutrition analysis</p>
         </div>
+
         <form id="calorieForm">
-            <label for="food_item">Food Item:</label>
-            <div class="search-container">
-                <input type="text" id="food_item" name="food_item" list="food-suggestions" required>
-                <button type="button" id="imageSearchBtn" class="icon-button" title="Search by image" aria-label="Upload food image">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M16 8h.01"></path>
-                    </svg>
-                </button>
-            </div>
-            <datalist id="food-suggestions">
-                <!-- Options will be populated by JavaScript -->
-            </datalist>
-
-            <label for="quantity">Quantity:</label>
-            <div class="quantity-container">
-                <input type="number" id="quantity" name="quantity" required>
-                <select id="quantity_unit" name="quantity_unit">
-                    <option value="" disabled selected>Select unit</option>
-                    <option value="units">Pieces/Units</option>
-                    <option value="plate">Plate</option>
-                    <option value="grams">Grams (g)</option>
-                    <option value="ml">Milliliters (ml)</option>
-                    <option value="bowl">Bowl</option>
-                    <option value="cup">Cup</option>
-                    <option value="tbsp">Tablespoon</option>
-                    <option value="tsp">Teaspoon</option>
-                </select>
+            <div class="form-group">
+                <label for="food_item">What did you eat?</label>
+                <div class="search-container">
+                    <input type="text" id="food_item" name="food_item" list="food-suggestions" placeholder="e.g., Dal Makhani, Idli..." required>
+                    <button type="button" id="imageSearchBtn" class="icon-button" title="Search by image" aria-label="Upload food image">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                    </button>
+                </div>
+                <datalist id="food-suggestions">
+                    <!-- Options will be populated by JavaScript -->
+                </datalist>
             </div>
 
-            <button type="button" onclick="submitForm()">Get Nutrition Info</button>
+            <div class="form-group">
+                <label for="quantity">How much?</label>
+                <div class="quantity-container">
+                    <input type="number" id="quantity" name="quantity" placeholder="Amount" required min="0" step="any">
+                    <select id="quantity_unit" name="quantity_unit">
+                        <option value="" disabled selected>Unit</option>
+                        <option value="units">Pieces</option>
+                        <option value="plate">Plate</option>
+                        <option value="grams">Grams</option>
+                        <option value="ml">ml</option>
+                        <option value="bowl">Bowl</option>
+                        <option value="cup">Cup</option>
+                        <option value="tbsp">Tbsp</option>
+                        <option value="tsp">Tsp</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="button" class="submit-btn" onclick="submitForm()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                Get Nutrition Info
+            </button>
         </form>
 
         <!-- Image Upload Modal -->
         <div id="imageModal" class="modal">
             <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2>Upload Food Image</h2>
+                <button class="close" aria-label="Close modal">&times;</button>
+                <h2>Snap or Upload Food</h2>
+                <p class="modal-subtitle">Take a photo or choose from your gallery</p>
+
+                <div class="upload-options">
+                    <!-- Camera capture (mobile) -->
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+                    <button type="button" id="cameraBtn" class="upload-option-btn camera-btn">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        <span>Take Photo</span>
+                    </button>
+
+                    <!-- Gallery upload -->
+                    <input type="file" id="galleryInput" accept="image/*" style="display: none;">
+                    <button type="button" id="galleryBtn" class="upload-option-btn gallery-btn">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span>Choose from Gallery</span>
+                    </button>
+                </div>
+
                 <div class="upload-container">
-                    <input type="file" id="imageInput" accept="image/*" style="display: none;">
                     <div id="dropZone" class="drop-zone">
-                        <div class="drop-zone-text">
-                            Drop image here or click to upload
+                        <div class="drop-zone-content">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p class="drop-zone-text">or drag & drop image here</p>
                         </div>
-                        <img id="previewImage" style="display: none;">
+                        <img id="previewImage" alt="Food preview">
                     </div>
                 </div>
-                <button id="analyzeImageBtn" class="analyze-btn button-primary" disabled>Analyze Image</button>
+
+                <button id="analyzeImageBtn" class="analyze-btn" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    Analyze Food
+                </button>
             </div>
         </div>
 
         <!-- Results Container -->
-        <div class="loader" id="loader" style="display: none;"></div>
+        <div class="loader" id="loader" style="display: none;">
+            <div class="loader-spinner"></div>
+            <p class="loader-text">Analyzing nutrition...</p>
+        </div>
         <div id="results-container" style="display: none;">
             <div id="result"></div>
         </div>
     </div>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
     <footer class="footer">
         <p>
-            Developed by 
+            Developed by
             <a href="https://github.com/Ipseeta" target="_blank" rel="noopener noreferrer">
                 Ipseeta
                 <svg class="github-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835
+                    <path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
                 </svg>
             </a>
         </p>
     </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
